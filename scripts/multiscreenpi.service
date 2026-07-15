@@ -1,0 +1,17 @@
+[Unit]
+Description=MultiScreenPi panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/MultiScreenPi/src
+Environment=SDL_VIDEODRIVER=kmsdrm
+Environment=SDL_AUDIODRIVER=dummy
+ExecStart=/root/venv/bin/python3 /root/MultiScreenPi/src/main.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

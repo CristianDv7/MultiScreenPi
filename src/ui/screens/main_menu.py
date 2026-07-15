@@ -1,14 +1,15 @@
 from core.screen_manager import Screen
 from ui import theme
 from ui.screens.placeholder_screen import PlaceholderScreen
+from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.widgets.button import Button
 
 MENU_ITEMS = [
-    ("Pomodoro", "Temporizador personalizable"),
-    ("Noticias", "Titulares desde un feed"),
-    ("Home Assistant", "Controla tus luces"),
-    ("Metricas Ubicate", "Dashboard desde Supabase"),
-    ("Clima y Correos", "Vistazo rapido del dia"),
+    ("Pomodoro", "Temporizador personalizable", PomodoroScreen),
+    ("Noticias", "Titulares desde un feed", None),
+    ("Home Assistant", "Controla tus luces", None),
+    ("Metricas Ubicate", "Dashboard desde Supabase", None),
+    ("Clima y Correos", "Vistazo rapido del dia", None),
 ]
 
 
@@ -25,17 +26,22 @@ class MainMenuScreen(Screen):
         button_height = 130
         width = 600 - 48
 
-        for i, (title, subtitle) in enumerate(MENU_ITEMS):
+        for i, (title, subtitle, screen_cls) in enumerate(MENU_ITEMS):
             rect = (24, top + i * (button_height + spacing), width, button_height)
-            self.buttons.append(Button(rect, title, self._make_opener(title), subtitle=subtitle))
+            self.buttons.append(
+                Button(rect, title, self._make_opener(title, screen_cls), subtitle=subtitle)
+            )
 
         self.settings_button = Button(
-            (600 - 24 - 56, 24, 56, 56), "*", self._make_opener("Configuracion")
+            (600 - 24 - 56, 24, 56, 56), "*", self._make_opener("Configuracion", None)
         )
 
-    def _make_opener(self, title):
+    def _make_opener(self, title, screen_cls):
         def opener():
-            self.screen_manager.push(PlaceholderScreen(self.screen_manager, title))
+            if screen_cls is not None:
+                self.screen_manager.push(screen_cls(self.screen_manager))
+            else:
+                self.screen_manager.push(PlaceholderScreen(self.screen_manager, title))
 
         return opener
 
