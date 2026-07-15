@@ -1,0 +1,27 @@
+display:
+  # Zero-DISP-7A es nativamente 1024x600 horizontal.
+  # width/height aqui son la resolucion LOGICA (vertical) en la que dibuja la app;
+  # la app la rota internamente para mostrarla en el panel fisico.
+  width: 600
+  height: 1024
+  rotate: 90   # 90 o 270 segun el sentido de montaje fisico del panel; 0 = sin rotar
+  fullscreen: true
+  fps: 30
+
+home_assistant:
+  base_url: "http://homeassistant.local:8123"
+  token: "REEMPLAZA_CON_TU_TOKEN"
+
+supabase:
+  url: "https://xxxx.supabase.co"
+  key: "REEMPLAZA_CON_TU_KEY"
+
+weather:
+  api_key: "REEMPLAZA_CON_TU_KEY"
+  location: "Bogota,CO"
+
+news:
+  feed_url: "https://example.com/rss"
+
+wifi:
+  interface: "wlan0"
