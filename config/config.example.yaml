@@ -12,12 +12,20 @@ display:
   screen_timeout_seconds: 60
 
 voice:
+  # "pi" = gTTS + parlante conectado a la Pi. "alexa" = usa un Echo via
+  # Home Assistant (Alexa Media Player), no necesita parlante en la Pi.
+  output: "pi"
   hourly_announcement: true
   interval_minutes: 60
 
 home_assistant:
   base_url: "http://homeassistant.local:8123"
   token: "REEMPLAZA_CON_TU_TOKEN"
+
+alexa:
+  # Nombre exacto del servicio notify para tu Echo. Buscalo en HA:
+  # Herramientas de desarrollo > Acciones, filtra por "alexa_media".
+  notify_service: "notify.alexa_media_REEMPLAZA"
 
 supabase:
   url: "https://xxxx.supabase.co"

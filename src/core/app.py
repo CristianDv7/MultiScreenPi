@@ -6,7 +6,7 @@ from core import config
 from core.input import DOWN, MOVE, UP, normalize_event
 from core.screen_manager import ScreenManager
 from core.spanish_dates import time_phrase
-from services import tts_service
+from services import voice_service
 
 DRAG_THRESHOLD = 12
 
@@ -94,8 +94,8 @@ class App:
 
     def _speak_time(self):
         try:
-            tts_service.speak(time_phrase())
-        except tts_service.TTSError:
+            voice_service.speak(time_phrase())
+        except voice_service.VoiceError:
             pass
 
     def _present(self):

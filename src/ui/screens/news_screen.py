@@ -4,7 +4,7 @@ import pygame
 
 from core import config
 from core.screen_manager import Screen
-from services import news_service, tts_service
+from services import news_service, voice_service
 from ui import theme
 from ui.widgets.button import Button
 
@@ -37,16 +37,16 @@ class NewsScreen(Screen):
         self.buttons = [
             Button((24, 24, 100, 56), "< Volver", self._go_back),
             Button((132, 24, 120, 56), "Actualizar", self._load_active_feed),
-            Button((260, 24, 120, 56), "Detener", tts_service.stop),
+            Button((260, 24, 120, 56), "Detener", voice_service.stop),
         ]
         self._build_feed_buttons()
         self._load_active_feed()
 
     def on_exit(self):
-        tts_service.stop()
+        voice_service.stop()
 
     def _go_back(self):
-        tts_service.stop()
+        voice_service.stop()
         self.screen_manager.pop()
 
     def _build_feed_buttons(self):
@@ -120,7 +120,7 @@ class NewsScreen(Screen):
         item["expanded"] = not item["expanded"]
 
         if not item["expanded"]:
-            tts_service.stop()
+            voice_service.stop()
         else:
             if item["image_url"] and item["image_surface"] is None and not item["image_loading"]:
                 item["image_loading"] = True
@@ -131,8 +131,8 @@ class NewsScreen(Screen):
 
     def _speak_worker(self, text):
         try:
-            tts_service.speak(text)
-        except tts_service.TTSError as exc:
+            voice_service.speak(text)
+        except voice_service.VoiceError as exc:
             self.error = str(exc)
 
     def _load_image_worker(self, item):
