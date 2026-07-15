@@ -2,20 +2,26 @@ import pygame
 
 pygame.font.init()
 
-BG = (8, 8, 10)
-SURFACE = (26, 26, 30)
+BG = (255, 255, 255)
+SURFACE = (238, 240, 253)  # tinte lavanda muy suave para tarjetas sobre blanco
 
-# Acentos tomados de la paleta de UbicateAPP (dorado, verde, azul), sobre fondo negro.
+# Paleta de UbicateAPP
+INDIGO = (63, 81, 181)
+LAVENDER = (172, 180, 251)
 GOLD = (255, 179, 0)
 GREEN = (76, 175, 80)
-BLUE = (63, 81, 181)
+WHATSAPP_GREEN = (37, 211, 102)
+FACEBOOK_BLUE = (24, 119, 242)
+INSTAGRAM_PINK = (225, 48, 108)
+GRAY_NEUTRAL = (184, 181, 181)
 
-PRIMARY = GOLD
-SECONDARY = GREEN
-INFO = BLUE
+BLUE = INDIGO  # alias usado ya en varias pantallas
 
-TEXT = (245, 245, 247)
-TEXT_MUTED = (160, 160, 168)
+PRIMARY = INDIGO
+SECONDARY = LAVENDER
+
+TEXT = (28, 28, 32)
+TEXT_MUTED = (110, 110, 120)
 TEXT_ON_ACCENT = (12, 12, 12)
 
 FONT_PATH = None  # usa la fuente por defecto de pygame hasta que agreguemos una custom en assets/fonts

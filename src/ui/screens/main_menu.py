@@ -6,6 +6,7 @@ from ui.screens.placeholder_screen import PlaceholderScreen
 from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.screens.settings_screen import SettingsScreen
+from ui.screens.weather_mail_screen import WeatherMailScreen
 from ui.widgets.button import Button
 
 MENU_ITEMS = [
@@ -13,7 +14,7 @@ MENU_ITEMS = [
     ("Noticias", "Titulares desde un feed", NewsScreen, theme.BLUE),
     ("Home Assistant", "Controla tus luces", HomeAssistantScreen, theme.GREEN),
     ("Metricas Ubicate", "Dashboard desde Supabase", None, theme.GOLD),
-    ("Clima y Correos", "Vistazo rapido del dia", None, theme.BLUE),
+    ("Clima y Correos", "Vistazo rapido del dia", WeatherMailScreen, theme.BLUE),
 ]
 
 
