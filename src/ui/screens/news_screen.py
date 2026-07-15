@@ -4,7 +4,7 @@ import pygame
 
 from core import config
 from core.screen_manager import Screen
-from services import news_service
+from services import news_service, tts_service
 from ui import theme
 from ui.widgets.button import Button
 
@@ -34,11 +34,19 @@ class NewsScreen(Screen):
 
     def on_enter(self):
         self.buttons = [
-            Button((24, 24, 130, 56), "< Volver", self.screen_manager.pop),
-            Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load_active_feed),
+            Button((24, 24, 100, 56), "< Volver", self._go_back),
+            Button((132, 24, 120, 56), "Actualizar", self._load_active_feed),
+            Button((260, 24, 120, 56), "Detener", tts_service.stop),
         ]
         self._build_feed_buttons()
         self._load_active_feed()
+
+    def on_exit(self):
+        tts_service.stop()
+
+    def _go_back(self):
+        tts_service.stop()
+        self.screen_manager.pop()
 
     def _build_feed_buttons(self):
         self.feed_buttons = []
@@ -69,6 +77,7 @@ class NewsScreen(Screen):
     def _load_active_feed(self):
         if self.loading or not self.feeds:
             return
+        tts_service.stop()
         self.loading = True
         self.error = None
         self.items = []
@@ -108,9 +117,19 @@ class NewsScreen(Screen):
     def _toggle_item(self, index):
         item = self.items[index]
         item["expanded"] = not item["expanded"]
-        if item["expanded"] and item["image_url"] and item["image_surface"] is None and not item["image_loading"]:
-            item["image_loading"] = True
-            threading.Thread(target=self._load_image_worker, args=(item,), daemon=True).start()
+
+        if not item["expanded"]:
+            tts_service.stop()
+        else:
+            if item["image_url"] and item["image_surface"] is None and not item["image_loading"]:
+                item["image_loading"] = True
+                threading.Thread(target=self._load_image_worker, args=(item,), daemon=True).start()
+
+            spoken_text = f"{item['title']}. {item['description']}".strip()
+            try:
+                tts_service.speak(spoken_text)
+            except tts_service.TTSError as exc:
+                self.error = str(exc)
 
     def _load_image_worker(self, item):
         item["image_surface"] = news_service.load_image(item["image_url"], MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT)
