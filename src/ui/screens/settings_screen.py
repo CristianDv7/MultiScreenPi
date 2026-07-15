@@ -1,15 +1,19 @@
 import pygame
 
+from core import config
 from core.screen_manager import Screen
 from services import wifi_service
 from ui import theme
 from ui.widgets.button import Button
 from ui.widgets.keyboard import Keyboard
 
-FIELD_HEIGHT = 56
-SSID_RECT = pygame.Rect(24, 140, 600 - 48, FIELD_HEIGHT)
-PASSWORD_RECT = pygame.Rect(24, 212, 600 - 48, FIELD_HEIGHT)
-SAVE_RECT = (24, 480, 600 - 48, 60)
+FIELD_HEIGHT = 50
+SSID_RECT = pygame.Rect(24, 156, 600 - 48, FIELD_HEIGHT)
+PASSWORD_RECT = pygame.Rect(24, 214, 600 - 48, FIELD_HEIGHT)
+WIFI_SAVE_RECT = (24, 272, 600 - 48, FIELD_HEIGHT)
+STATUS_Y = 332
+TIMEOUT_RECT = pygame.Rect(24, 418, 600 - 48, FIELD_HEIGHT)
+TIMEOUT_SAVE_RECT = (24, 476, 600 - 48, FIELD_HEIGHT)
 
 
 class SettingsScreen(Screen):
@@ -17,16 +21,18 @@ class SettingsScreen(Screen):
         self.screen_manager = screen_manager
         self.ssid = ""
         self.password = ""
+        self.timeout_value = ""
         self.active_field = "ssid"
         self.show_password = False
         self.status = None
         self.saving = False
         self.buttons = []
-        self.keyboard = Keyboard(top=560)
+        self.keyboard = Keyboard(top=545)
 
     def on_enter(self):
         current = wifi_service.get_current_ssid()
         self.status = f"Conectado a: {current}" if current else "Sin conexion WiFi detectada"
+        self.timeout_value = str(config.get("display", "screen_timeout_seconds", default=60))
         self._build_buttons()
 
     def _build_buttons(self):
@@ -37,14 +43,15 @@ class SettingsScreen(Screen):
                 "Ocultar" if self.show_password else "Ver",
                 self._toggle_show,
             ),
-            Button(SAVE_RECT, "Guardar WiFi", self._save),
+            Button(WIFI_SAVE_RECT, "Guardar WiFi", self._save_wifi),
+            Button(TIMEOUT_SAVE_RECT, "Guardar tiempo de pantalla", self._save_timeout),
         ]
 
     def _toggle_show(self):
         self.show_password = not self.show_password
         self._build_buttons()
 
-    def _save(self):
+    def _save_wifi(self):
         if self.saving:
             return
         self.saving = True
@@ -57,6 +64,14 @@ class SettingsScreen(Screen):
         finally:
             self.saving = False
 
+    def _save_timeout(self):
+        if not self.timeout_value.isdigit():
+            self.status = "El tiempo de pantalla debe ser un numero (segundos)"
+            return
+        seconds = int(self.timeout_value)
+        config.set_value(seconds, "display", "screen_timeout_seconds")
+        self.status = f"Tiempo de pantalla guardado: {seconds}s (0 = nunca)"
+
     def on_tap(self, pos):
         for button in self.buttons:
             if button.handle_tap(pos):
@@ -67,6 +82,9 @@ class SettingsScreen(Screen):
             return
         if PASSWORD_RECT.collidepoint(pos):
             self.active_field = "password"
+            return
+        if TIMEOUT_RECT.collidepoint(pos):
+            self.active_field = "timeout"
             return
 
         result = self.keyboard.handle_tap(pos)
@@ -84,19 +102,26 @@ class SettingsScreen(Screen):
             self.ssid += char
         elif self.active_field == "password":
             self.password += char
+        elif self.active_field == "timeout" and char.isdigit():
+            self.timeout_value += char
 
     def _backspace(self):
         if self.active_field == "ssid":
             self.ssid = self.ssid[:-1]
         elif self.active_field == "password":
             self.password = self.password[:-1]
+        elif self.active_field == "timeout":
+            self.timeout_value = self.timeout_value[:-1]
 
     def draw(self, surface):
         surface.fill(theme.BG)
         w = surface.get_width()
 
         title_surf = theme.FONT_TITLE.render("Configuracion", True, theme.TEXT)
-        surface.blit(title_surf, (24, 90))
+        surface.blit(title_surf, (24, 80))
+
+        wifi_label = theme.FONT_SMALL.render("WiFi", True, theme.TEXT_MUTED)
+        surface.blit(wifi_label, (24, 130))
 
         self._draw_field(surface, SSID_RECT, "SSID", self.ssid, self.active_field == "ssid", mask=False)
         self._draw_field(
@@ -109,10 +134,18 @@ class SettingsScreen(Screen):
         )
 
         if self.status:
-            y = 300
+            y = STATUS_Y
             for line in _wrap(self.status, theme.FONT_SMALL, w - 48):
                 surface.blit(theme.FONT_SMALL.render(line, True, theme.TEXT_MUTED), (24, y))
-                y += 26
+                y += 24
+
+        timeout_label = theme.FONT_SMALL.render(
+            "Tiempo de pantalla (segundos, 0 = nunca)", True, theme.TEXT_MUTED
+        )
+        surface.blit(timeout_label, (24, 392))
+        self._draw_field(
+            surface, TIMEOUT_RECT, "60", self.timeout_value, self.active_field == "timeout", mask=False
+        )
 
         for button in self.buttons:
             button.draw(surface)

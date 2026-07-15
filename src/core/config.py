@@ -29,3 +29,19 @@ def get(*keys, default=None):
             return default
         node = node[key]
     return node
+
+
+def set_value(*keys, value):
+    """Actualiza un valor en memoria y lo persiste en config/config.yaml."""
+    cfg = load_config()
+    node = cfg
+    for key in keys[:-1]:
+        node = node.setdefault(key, {})
+    node[keys[-1]] = value
+    _save(cfg)
+
+
+def _save(cfg):
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)

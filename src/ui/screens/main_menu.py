@@ -1,3 +1,4 @@
+from core import config
 from core.screen_manager import Screen
 from ui import theme
 from ui.screens.placeholder_screen import PlaceholderScreen
@@ -20,6 +21,8 @@ class MainMenuScreen(Screen):
         self.screen_manager = screen_manager
         self.buttons = []
         self.settings_button = None
+        self.idle_elapsed = 0.0
+        self.blanked = False
 
     def on_enter(self):
         self.buttons = []
@@ -35,8 +38,11 @@ class MainMenuScreen(Screen):
             )
 
         self.settings_button = Button(
-            (600 - 24 - 56, 24, 56, 56), "*", self._make_opener("Configuracion", SettingsScreen)
+            (600 - 24 - 140, 24, 140, 56), "Ajustes", self._make_opener("Configuracion", SettingsScreen)
         )
+
+        self.idle_elapsed = 0.0
+        self.blanked = False
 
     def _make_opener(self, title, screen_cls):
         def opener():
@@ -47,14 +53,39 @@ class MainMenuScreen(Screen):
 
         return opener
 
+    def _timeout_seconds(self):
+        return config.get("display", "screen_timeout_seconds", default=60)
+
+    def update(self, dt):
+        timeout = self._timeout_seconds()
+        if timeout and timeout > 0:
+            self.idle_elapsed += dt
+            if self.idle_elapsed >= timeout:
+                self.blanked = True
+        else:
+            self.blanked = False
+
     def on_tap(self, pos):
+        self.idle_elapsed = 0.0
+        if self.blanked:
+            self.blanked = False
+            return
+
         for button in self.buttons:
             if button.handle_tap(pos):
                 return
         if self.settings_button:
             self.settings_button.handle_tap(pos)
 
+    def on_scroll(self, dy):
+        self.idle_elapsed = 0.0
+        self.blanked = False
+
     def draw(self, surface):
+        if self.blanked:
+            surface.fill((0, 0, 0))
+            return
+
         surface.fill(theme.BG)
 
         header = theme.FONT_TITLE.render("MultiScreenPi", True, theme.TEXT)
