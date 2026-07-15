@@ -7,6 +7,8 @@ import pygame
 import requests
 
 TIMEOUT = 10
+# Varios sitios rechazan peticiones sin un User-Agent de navegador (400/403).
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; MultiScreenPi/1.0)"}
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 MEDIA_NS = "{http://search.yahoo.com/mrss/}"
 CONTENT_NS = "{http://purl.org/rss/1.0/modules/content/}"
@@ -24,7 +26,7 @@ def fetch_items(feed_url, limit=12):
         raise NewsFetchError("Este feed no tiene URL configurada")
 
     try:
-        response = requests.get(feed_url, timeout=TIMEOUT)
+        response = requests.get(feed_url, headers=HEADERS, timeout=TIMEOUT)
         response.raise_for_status()
     except requests.RequestException as exc:
         raise NewsFetchError(str(exc)) from exc
@@ -100,7 +102,7 @@ def _extract_image(item, tag):
 
 def load_image(url, max_width, max_height=None):
     try:
-        response = requests.get(url, timeout=TIMEOUT)
+        response = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
         response.raise_for_status()
         image = pygame.image.load(io.BytesIO(response.content)).convert()
     except (requests.RequestException, pygame.error, OSError):
