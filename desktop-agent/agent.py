@@ -18,16 +18,16 @@ port-forwarding en el router) y manten el token en secreto.
 
 import http.server
 import json
-import subprocess
+import os
 import webbrowser
 
 PORT = 5566
 TOKEN = "eldv71998"
 
-# Nombre -> comando para lanzar la app. Ajusta las rutas a lo que tengas instalado.
+# Nombre -> ruta a la app o acceso directo (.exe o .lnk). os.startfile la abre
+# igual que si le dieras doble clic, asi que los .lnk funcionan sin problema.
 APPS = {
-    # "notion": r"C:\Users\chris\AppData\Local\Programs\Notion\Notion.exe",
-    # "spotify": r"C:\Users\chris\AppData\Roaming\Spotify\Spotify.exe",
+    "android_studio": r"C:\Users\chris\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\JetBrains Toolbox\Android Studio.lnk",
 }
 
 
@@ -69,7 +69,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not command:
                 self._respond(404, f"app '{app}' no configurada en APPS")
                 return
-            subprocess.Popen(command)
+            os.startfile(command)
             self._respond(200, "ok")
             return
 
