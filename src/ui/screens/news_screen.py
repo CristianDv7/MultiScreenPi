@@ -126,10 +126,13 @@ class NewsScreen(Screen):
                 threading.Thread(target=self._load_image_worker, args=(item,), daemon=True).start()
 
             spoken_text = f"{item['title']}. {item['description']}".strip()
-            try:
-                tts_service.speak(spoken_text)
-            except tts_service.TTSError as exc:
-                self.error = str(exc)
+            threading.Thread(target=self._speak_worker, args=(spoken_text,), daemon=True).start()
+
+    def _speak_worker(self, text):
+        try:
+            tts_service.speak(text)
+        except tts_service.TTSError as exc:
+            self.error = str(exc)
 
     def _load_image_worker(self, item):
         item["image_surface"] = news_service.load_image(item["image_url"], MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT)
