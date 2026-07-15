@@ -78,7 +78,7 @@ class NewsScreen(Screen):
     def _load_active_feed(self):
         if self.loading or not self.feeds:
             return
-        tts_service.stop()
+        voice_service.stop()
         self.loading = True
         self.error = None
         self.items = []
