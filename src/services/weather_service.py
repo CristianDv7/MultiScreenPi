@@ -1,8 +1,11 @@
+import datetime
+
 import requests
 
 from core import config
 
 TIMEOUT = 8
+DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
 
 class WeatherError(Exception):
@@ -66,18 +69,21 @@ def fetch_hourly_forecast(limit=8):
         raise WeatherError(str(exc)) from exc
 
     # Ordenamos explicitamente por timestamp: la API deberia devolverlo ya
-    # ordenado, pero as segura que nunca salga desordenado en pantalla.
+    # ordenado, pero asi nos aseguramos que nunca salga desordenado en pantalla.
     items = sorted(data.get("list", []), key=lambda item: item.get("dt", 0))
+
+    # dt/dt_txt vienen en UTC; hay que corregir con el offset de la ciudad
+    # (en segundos) para mostrar la hora local real, si no los horarios salen
+    # desfasados varias horas segun la zona horaria del usuario.
+    tz_offset = data.get("city", {}).get("timezone", 0)
 
     entries = []
     for item in items[:limit]:
-        dt_txt = item.get("dt_txt", "")  # "2026-07-15 18:00:00"
-        if " " in dt_txt:
-            date_part, time_part = dt_txt.split(" ")
-            year, month, day = date_part.split("-")
-            time_label = f"{day}/{month} {time_part[:5]}"
-        else:
-            time_label = dt_txt
+        dt = item.get("dt", 0)
+        local_dt = datetime.datetime.utcfromtimestamp(dt + tz_offset)
+        dia = DIAS[local_dt.weekday()]
+        time_label = f"{dia} {local_dt.day}/{local_dt.month} {local_dt.strftime('%H:%M')}"
+
         weather = (item.get("weather") or [{}])[0]
         entries.append(
             {
