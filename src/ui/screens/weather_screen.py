@@ -1,0 +1,123 @@
+import threading
+
+import pygame
+
+from core.screen_manager import Screen
+from services import weather_service
+from ui import theme
+from ui.widgets.button import Button
+
+CURRENT_CARD = pygame.Rect(24, 100, 600 - 48, 180)
+FORECAST_TOP = 330
+ROW_HEIGHT = 60
+ROW_GAP = 8
+
+
+class WeatherScreen(Screen):
+    def __init__(self, screen_manager):
+        self.screen_manager = screen_manager
+        self.current = None
+        self.forecast = []
+        self.error = None
+        self.loading = False
+        self.buttons = []
+
+    def on_enter(self):
+        self.buttons = [
+            Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
+            Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load),
+        ]
+        self._load()
+
+    def _load(self):
+        if self.loading:
+            return
+        self.loading = True
+        self.error = None
+        self.current = None
+        self.forecast = []
+        threading.Thread(target=self._load_worker, daemon=True).start()
+
+    def _load_worker(self):
+        try:
+            self.current = weather_service.fetch_current()
+            self.forecast = weather_service.fetch_hourly_forecast(limit=8)
+        except weather_service.WeatherError as exc:
+            self.error = str(exc)
+        finally:
+            self.loading = False
+
+    def on_tap(self, pos):
+        for button in self.buttons:
+            if button.handle_tap(pos):
+                return
+
+    def draw(self, surface):
+        surface.fill(theme.BG)
+        w = surface.get_width()
+
+        for button in self.buttons:
+            button.draw(surface)
+
+        pygame.draw.rect(surface, theme.SURFACE, CURRENT_CARD, border_radius=24)
+        pygame.draw.rect(surface, theme.INDIGO, CURRENT_CARD, width=3, border_radius=24)
+
+        x = CURRENT_CARD.left + 24
+        y = CURRENT_CARD.top + 20
+
+        if self.loading and self.current is None and not self.error:
+            surface.blit(theme.FONT_BODY.render("Cargando clima...", True, theme.TEXT_MUTED), (x, y))
+            return
+
+        if self.error:
+            for line in _wrap(f"Error: {self.error}", theme.FONT_SMALL, CURRENT_CARD.width - 48):
+                surface.blit(theme.FONT_SMALL.render(line, True, theme.TEXT_MUTED), (x, y))
+                y += 24
+            return
+
+        data = self.current
+        surface.blit(theme.FONT_BODY.render(data["city"], True, theme.TEXT), (x, y))
+
+        temp_surf = theme.FONT_TIMER.render(f"{data['temp']}°C", True, theme.TEXT)
+        surface.blit(temp_surf, (CURRENT_CARD.right - 24 - temp_surf.get_width(), CURRENT_CARD.top + 30))
+
+        y += 44
+        surface.blit(theme.FONT_BODY.render(data["description"], True, theme.TEXT_MUTED), (x, y))
+        y += 38
+        extra = f"Sensacion: {data['feels_like']}°C   Humedad: {data['humidity']}%"
+        surface.blit(theme.FONT_SMALL.render(extra, True, theme.TEXT_MUTED), (x, y))
+
+        surface.blit(theme.FONT_BODY.render("Pronostico por horas", True, theme.TEXT), (24, FORECAST_TOP - 44))
+
+        row_y = FORECAST_TOP
+        for entry in self.forecast:
+            row_rect = pygame.Rect(24, row_y, w - 48, ROW_HEIGHT)
+            pygame.draw.rect(surface, theme.SURFACE, row_rect, border_radius=14)
+
+            time_surf = theme.FONT_BODY.render(entry["time"], True, theme.TEXT)
+            surface.blit(time_surf, time_surf.get_rect(midleft=(row_rect.left + 20, row_rect.centery)))
+
+            desc_surf = theme.FONT_SMALL.render(entry["description"], True, theme.TEXT_MUTED)
+            surface.blit(desc_surf, desc_surf.get_rect(center=(row_rect.centerx, row_rect.centery)))
+
+            temp_surf = theme.FONT_BODY.render(f"{entry['temp']}°C", True, theme.GOLD)
+            surface.blit(temp_surf, temp_surf.get_rect(midright=(row_rect.right - 20, row_rect.centery)))
+
+            row_y += ROW_HEIGHT + ROW_GAP
+
+
+def _wrap(text, font, max_width):
+    words = text.split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if font.size(candidate)[0] <= max_width:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
