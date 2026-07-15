@@ -9,7 +9,13 @@ from ui.widgets.button import Button
 
 CARD_HEIGHT = 76
 CARD_GAP = 14
+COLUMN_GAP = 16
 LIST_TOP = 100
+
+DESKTOPS = [
+    {"name": "Escritorio 1", "direction": "left"},
+    {"name": "Escritorio 2", "direction": "right"},
+]
 
 
 class PCControlScreen(Screen):
@@ -62,6 +68,16 @@ class PCControlScreen(Screen):
         except pc_control_service.PCControlError as exc:
             self.status = f"Error: {exc}"
 
+    def _switch_desktop(self, desktop):
+        threading.Thread(target=self._switch_desktop_worker, args=(desktop,), daemon=True).start()
+
+    def _switch_desktop_worker(self, desktop):
+        try:
+            pc_control_service.switch_desktop(desktop["direction"])
+            self.status = f"{desktop['name']}: activado"
+        except pc_control_service.PCControlError as exc:
+            self.status = f"Error: {exc}"
+
     def _trigger(self, index):
         shortcut = self.shortcuts[index]
         self.status = f"Abriendo {shortcut.get('name')}..."
@@ -90,6 +106,8 @@ class PCControlScreen(Screen):
                     self._trigger(value)
                 elif kind == "audio":
                     self._switch_audio(value)
+                elif kind == "desktop":
+                    self._switch_desktop(value)
                 return
 
     def on_scroll(self, dy):
@@ -112,22 +130,59 @@ class PCControlScreen(Screen):
         self._item_rects = []
         card_width = w - 48
 
+        y = self._draw_section_label(surface, "Escritorios", y)
+        y = self._draw_grid(
+            surface,
+            card_width,
+            y,
+            DESKTOPS,
+            lambda rect, item: self._draw_desktop_card(surface, rect, item),
+        )
+        y += 20
+
+        y = self._draw_section_label(surface, "Salida de audio", y)
         y = self._draw_audio_section(surface, y, card_width)
         y += 20
-        y = self._draw_shortcuts_section(surface, y, card_width, w)
+
+        y = self._draw_section_label(surface, "Atajos", y)
+        y = self._draw_shortcuts_section(surface, y, card_width)
 
         if self.status:
-            for line in _wrap(self.status, theme.FONT_SMALL, w - 48):
+            for line in _wrap(self.status, theme.FONT_SMALL, card_width):
                 surface.blit(theme.FONT_SMALL.render(line, True, theme.TEXT_MUTED), (24, y))
                 y += 24
 
         self.content_height = y + int(self.scroll) - LIST_TOP
         surface.set_clip(None)
 
-    def _draw_audio_section(self, surface, y, card_width):
-        surface.blit(theme.FONT_BODY.render("Salida de audio", True, theme.TEXT), (24, y))
-        y += 40
+    def _draw_section_label(self, surface, text, y):
+        surface.blit(theme.FONT_BODY.render(text, True, theme.TEXT), (24, y))
+        return y + 40
 
+    def _draw_grid(self, surface, card_width, top, items, render_fn):
+        column_width = (card_width - COLUMN_GAP) / 2
+        for i, item in enumerate(items):
+            col = i % 2
+            row = i // 2
+            x = 24 + col * (column_width + COLUMN_GAP)
+            y = top + row * (CARD_HEIGHT + CARD_GAP)
+            rect = pygame.Rect(int(x), int(y), int(column_width), CARD_HEIGHT)
+            render_fn(rect, item)
+
+        rows = (len(items) + 1) // 2
+        return top + rows * (CARD_HEIGHT + CARD_GAP)
+
+    def _draw_desktop_card(self, surface, rect, desktop):
+        pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=16)
+        bar_rect = pygame.Rect(rect.left, rect.top, 6, rect.height)
+        pygame.draw.rect(surface, theme.GOLD, bar_rect, border_top_left_radius=16, border_bottom_left_radius=16)
+
+        name_surf = theme.FONT_BODY.render(desktop["name"], True, theme.TEXT)
+        surface.blit(name_surf, name_surf.get_rect(center=rect.center))
+
+        self._item_rects.append((rect, "desktop", desktop))
+
+    def _draw_audio_section(self, surface, y, card_width):
         if self.audio_loading and not self.audio_devices:
             surface.blit(theme.FONT_SMALL.render("Cargando dispositivos...", True, theme.TEXT_MUTED), (24, y))
             return y + 34
@@ -138,30 +193,24 @@ class PCControlScreen(Screen):
                 y += 24
             return y
 
-        for device in self.audio_devices:
-            rect = pygame.Rect(24, y, card_width, CARD_HEIGHT)
+        def render(rect, device):
             is_current = device == self.audio_current
             pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=16)
             bar_color = theme.GREEN if is_current else theme.TEXT_MUTED
             bar_rect = pygame.Rect(rect.left, rect.top, 6, rect.height)
             pygame.draw.rect(surface, bar_color, bar_rect, border_top_left_radius=16, border_bottom_left_radius=16)
 
-            name_surf = theme.FONT_BODY.render(device, True, theme.TEXT)
-            surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 30, rect.centery)))
-
-            if is_current:
-                tag_surf = theme.FONT_SMALL.render("ACTUAL", True, theme.GREEN)
-                surface.blit(tag_surf, tag_surf.get_rect(midright=(rect.right - 24, rect.centery)))
+            name_surf = theme.FONT_SMALL.render(device, True, theme.TEXT)
+            clip = surface.get_clip()
+            surface.set_clip(rect.inflate(-16, 0))
+            surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 16, rect.centery)))
+            surface.set_clip(clip)
 
             self._item_rects.append((rect, "audio", device))
-            y += CARD_HEIGHT + CARD_GAP
 
-        return y
+        return self._draw_grid(surface, card_width, y, self.audio_devices, render)
 
-    def _draw_shortcuts_section(self, surface, y, card_width, w):
-        surface.blit(theme.FONT_BODY.render("Atajos", True, theme.TEXT), (24, y))
-        y += 40
-
+    def _draw_shortcuts_section(self, surface, y, card_width):
         if not self.shortcuts:
             surface.blit(
                 theme.FONT_SMALL.render("Configura pc_control.shortcuts en config.yaml", True, theme.TEXT_MUTED),
@@ -169,26 +218,23 @@ class PCControlScreen(Screen):
             )
             return y + 34
 
-        for index, shortcut in enumerate(self.shortcuts):
-            rect = pygame.Rect(24, y, card_width, CARD_HEIGHT)
+        def render(rect, entry):
+            index, shortcut = entry
             pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=16)
             bar_rect = pygame.Rect(rect.left, rect.top, 6, rect.height)
             pygame.draw.rect(
                 surface, theme.LAVENDER, bar_rect, border_top_left_radius=16, border_bottom_left_radius=16
             )
 
-            name_surf = theme.FONT_BODY.render(shortcut.get("name", "?"), True, theme.TEXT)
-            surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 30, rect.centery)))
-
-            kind_surf = theme.FONT_SMALL.render(
-                "Sitio web" if shortcut.get("type") == "url" else "App", True, theme.TEXT_MUTED
-            )
-            surface.blit(kind_surf, kind_surf.get_rect(midright=(rect.right - 24, rect.centery)))
+            name_surf = theme.FONT_SMALL.render(shortcut.get("name", "?"), True, theme.TEXT)
+            clip = surface.get_clip()
+            surface.set_clip(rect.inflate(-16, 0))
+            surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 16, rect.centery)))
+            surface.set_clip(clip)
 
             self._item_rects.append((rect, "shortcut", index))
-            y += CARD_HEIGHT + CARD_GAP
 
-        return y
+        return self._draw_grid(surface, card_width, y, list(enumerate(self.shortcuts)), render)
 
 
 def _wrap(text, font, max_width):

@@ -66,3 +66,17 @@ def set_audio_device(name):
         response.raise_for_status()
     except requests.RequestException as exc:
         raise PCControlError(str(exc)) from exc
+
+
+def switch_desktop(direction):
+    base_url = _base_url()
+    if not base_url:
+        raise PCControlError("Configura pc_control.base_url en config.yaml")
+
+    try:
+        response = requests.post(
+            f"{base_url}/switch-desktop", json={"direction": direction}, headers=_headers(), timeout=TIMEOUT
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise PCControlError(str(exc)) from exc

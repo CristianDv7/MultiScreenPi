@@ -29,6 +29,7 @@ import os
 import webbrowser
 
 import audio
+import desktop_switch
 
 PORT = 5566
 TOKEN = "eldv71998"
@@ -109,6 +110,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._respond(404, f"no se encontro un dispositivo activo que contenga '{name}'")
                 return
             self._respond(200, result)
+            return
+
+        if self.path == "/switch-desktop":
+            direction = body.get("direction", "")
+            if direction not in ("left", "right"):
+                self._respond(400, "'direction' debe ser 'left' o 'right'")
+                return
+            desktop_switch.switch_desktop(direction)
+            self._respond(200, "ok")
             return
 
         self._respond(404, "ruta no encontrada")

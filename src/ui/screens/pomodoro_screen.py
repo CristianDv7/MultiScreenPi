@@ -130,7 +130,7 @@ class PomodoroScreen(Screen):
     def draw(self, surface):
         surface.fill(theme.BG)
         w = surface.get_width()
-        accent = theme.GOLD if self.phase == "focus" else theme.GREEN
+        accent = theme.BLUE if self.phase == "focus" else theme.GREEN
 
         pygame.draw.rect(surface, theme.SURFACE, CARD_RECT, border_radius=28)
         pygame.draw.rect(surface, accent, CARD_RECT, width=4, border_radius=28)
