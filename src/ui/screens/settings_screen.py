@@ -2,7 +2,7 @@ import pygame
 
 from core import config
 from core.screen_manager import Screen
-from services import wifi_service
+from services import system_service, wifi_service
 from ui import theme
 from ui.widgets.button import Button
 from ui.widgets.keyboard import Keyboard
@@ -29,10 +29,12 @@ class SettingsScreen(Screen):
         self.buttons = []
         self.keyboard = Keyboard(top=545)
         self._timeout_touched = False
+        self.ip_address = None
 
     def on_enter(self):
         current = wifi_service.get_current_ssid()
         self.status = f"Conectado a: {current}" if current else "Sin conexion WiFi detectada"
+        self.ip_address = system_service.get_local_ip()
         self.timeout_value = str(config.get("display", "screen_timeout_seconds", default=60))
         self._timeout_touched = False
         self._build_buttons()
@@ -123,7 +125,11 @@ class SettingsScreen(Screen):
         w = surface.get_width()
 
         title_surf = theme.FONT_TITLE.render("Configuracion", True, theme.TEXT)
-        surface.blit(title_surf, (24, 80))
+        surface.blit(title_surf, (24, 64))
+
+        ip_text = f"IP: {self.ip_address}" if self.ip_address else "IP: no disponible"
+        ip_surf = theme.FONT_SMALL.render(ip_text, True, theme.TEXT_MUTED)
+        surface.blit(ip_surf, (24, 100))
 
         wifi_label = theme.FONT_SMALL.render("WiFi", True, theme.TEXT_MUTED)
         surface.blit(wifi_label, (24, 130))

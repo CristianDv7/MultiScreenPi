@@ -45,20 +45,15 @@ def fetch_items(feed_url, limit=12):
         if tag == "item":
             title_el = item.find("title")
             desc_el = item.find("description")
-            content_el = item.find(f"{CONTENT_NS}encoded")
         else:
             title_el = item.find(f"{ATOM_NS}title")
             desc_el = item.find(f"{ATOM_NS}summary")
-            content_el = item.find(f"{ATOM_NS}content")
 
         title = (title_el.text or "").strip() if title_el is not None else "(sin titulo)"
 
-        # content:encoded (o <content> en Atom) suele traer el cuerpo completo;
-        # description/summary normalmente es solo un resumen corto.
+        # Solo el resumen corto (description/summary), no el cuerpo completo del articulo.
         desc_text = desc_el.text if desc_el is not None and desc_el.text else ""
-        content_text = content_el.text if content_el is not None and content_el.text else ""
-        raw_body = content_text if len(content_text) > len(desc_text) else desc_text
-        description = _clean_html(raw_body) if raw_body else ""
+        description = _clean_html(desc_text) if desc_text else ""
 
         results.append(
             {
