@@ -9,6 +9,7 @@ import requests
 TIMEOUT = 10
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 MEDIA_NS = "{http://search.yahoo.com/mrss/}"
+CONTENT_NS = "{http://purl.org/rss/1.0/modules/content/}"
 IMG_SRC_RE = re.compile(r'<img[^>]+src="([^"]+)"')
 TAG_RE = re.compile(r"<[^>]+>")
 WHITESPACE_RE = re.compile(r"\s+")
@@ -44,14 +45,20 @@ def fetch_items(feed_url, limit=12):
         if tag == "item":
             title_el = item.find("title")
             desc_el = item.find("description")
+            content_el = item.find(f"{CONTENT_NS}encoded")
         else:
             title_el = item.find(f"{ATOM_NS}title")
             desc_el = item.find(f"{ATOM_NS}summary")
-            if desc_el is None:
-                desc_el = item.find(f"{ATOM_NS}content")
+            content_el = item.find(f"{ATOM_NS}content")
 
         title = (title_el.text or "").strip() if title_el is not None else "(sin titulo)"
-        description = _clean_html(desc_el.text) if desc_el is not None and desc_el.text else ""
+
+        # content:encoded (o <content> en Atom) suele traer el cuerpo completo;
+        # description/summary normalmente es solo un resumen corto.
+        desc_text = desc_el.text if desc_el is not None and desc_el.text else ""
+        content_text = content_el.text if content_el is not None and content_el.text else ""
+        raw_body = content_text if len(content_text) > len(desc_text) else desc_text
+        description = _clean_html(raw_body) if raw_body else ""
 
         results.append(
             {
@@ -86,11 +93,12 @@ def _extract_image(item, tag):
     if media_thumb is not None and media_thumb.get("url"):
         return media_thumb.get("url")
 
-    description = item.find("description")
-    if description is not None and description.text:
-        match = IMG_SRC_RE.search(description.text)
-        if match:
-            return match.group(1)
+    for tag_name in ("description", f"{CONTENT_NS}encoded"):
+        el = item.find(tag_name)
+        if el is not None and el.text:
+            match = IMG_SRC_RE.search(el.text)
+            if match:
+                return match.group(1)
 
     return None
 
