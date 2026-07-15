@@ -1,12 +1,13 @@
 from core.screen_manager import Screen
 from ui import theme
 from ui.screens.placeholder_screen import PlaceholderScreen
+from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.widgets.button import Button
 
 MENU_ITEMS = [
     ("Pomodoro", "Temporizador personalizable", PomodoroScreen),
-    ("Noticias", "Titulares desde un feed", None),
+    ("Noticias", "Titulares desde un feed", NewsScreen),
     ("Home Assistant", "Controla tus luces", None),
     ("Metricas Ubicate", "Dashboard desde Supabase", None),
     ("Clima y Correos", "Vistazo rapido del dia", None),
