@@ -1,11 +1,18 @@
 """Agente de escritorio para MultiScreenPi.
 
 Corre este script en tu PC (misma red que la Raspberry Pi) para que el
-panel pueda abrir sitios web o lanzar apps aqui. Usa solo la libreria
-estandar de Python, no requiere instalar nada.
+panel pueda abrir sitios web, lanzar apps, y cambiar el dispositivo de
+salida de audio aqui.
+
+Dependencias (solo para el cambio de audio, todo lo demas es libreria
+estandar): pip install pycaw comtypes
 
 Uso:
     python agent.py
+
+Autoarranque con Windows: copia start_agent.vbs a tu carpeta de Inicio
+(shell:startup) para que se ejecute solo al iniciar sesion, sin ventana
+de consola.
 
 Configura TOKEN y APPS abajo, y copia esa misma URL/token en
 config/config.yaml del panel, seccion "pc_control".
@@ -20,6 +27,8 @@ import http.server
 import json
 import os
 import webbrowser
+
+import audio
 
 PORT = 5566
 TOKEN = "eldv71998"
@@ -41,6 +50,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         if message:
             self.wfile.write(message.encode("utf-8"))
+
+    def do_GET(self):
+        if not self._authorized():
+            self._respond(401, "unauthorized")
+            return
+
+        if self.path == "/audio-devices":
+            devices = audio.list_active_devices()
+            current = audio.get_current_device_name()
+            body = json.dumps({"devices": devices, "current": current})
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(body.encode("utf-8"))
+            return
+
+        self._respond(404, "ruta no encontrada")
 
     def do_POST(self):
         if not self._authorized():
@@ -71,6 +97,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return
             os.startfile(command)
             self._respond(200, "ok")
+            return
+
+        if self.path == "/set-audio-device":
+            name = body.get("name", "")
+            if not name:
+                self._respond(400, "falta 'name'")
+                return
+            result = audio.set_default_device(name)
+            if result is None:
+                self._respond(404, f"no se encontro un dispositivo activo que contenga '{name}'")
+                return
+            self._respond(200, result)
             return
 
         self._respond(404, "ruta no encontrada")
