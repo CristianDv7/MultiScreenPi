@@ -8,7 +8,6 @@ from core.screen_manager import ScreenManager
 class App:
     def __init__(self):
         pygame.init()
-        pygame.mouse.set_visible(False)
 
         self.logical_size = (
             config.get("display", "width", default=600),
@@ -21,6 +20,7 @@ class App:
         flags = pygame.FULLSCREEN if fullscreen else 0
         self.display_surface = pygame.display.set_mode(self._physical_size(), flags)
         pygame.display.set_caption("MultiScreenPi")
+        pygame.mouse.set_visible(False)
 
         self.logical_surface = pygame.Surface(self.logical_size)
 
