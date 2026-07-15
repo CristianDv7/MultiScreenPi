@@ -1,5 +1,8 @@
 import datetime
 import threading
+from pathlib import Path
+
+import pygame
 
 from core import config
 from core.screen_manager import Screen
@@ -17,6 +20,9 @@ from ui.screens.weather_screen import WeatherScreen
 from ui.widgets.button import Button
 
 WEATHER_REFRESH_SECONDS = 600  # 10 minutos
+SLIDESHOW_INTERVAL_SECONDS = 10
+SLIDESHOW_DIR = Path(__file__).resolve().parents[3] / "assets" / "slideshow"
+SLIDESHOW_MAX_SIZE = (520, 520)
 
 MENU_ITEMS = [
     ("Pomodoro", "Temporizador personalizable", PomodoroScreen, theme.GOLD),
@@ -40,6 +46,13 @@ class MainMenuScreen(Screen):
         self._weather_cache = None
         self._weather_loading = False
         self._weather_elapsed = WEATHER_REFRESH_SECONDS  # fuerza una carga inicial
+
+        self._slideshow_paths = []
+        self._slideshow_scanned = False
+        self._slideshow_index = 0
+        self._slideshow_elapsed = 0.0
+        self._slideshow_surface = None
+        self._slideshow_loading = False
 
     def on_enter(self):
         self.buttons = []
@@ -91,6 +104,9 @@ class MainMenuScreen(Screen):
             self._weather_loading = True
             threading.Thread(target=self._fetch_weather, daemon=True).start()
 
+        if self.blanked:
+            self._update_slideshow(dt)
+
     def _fetch_weather(self):
         try:
             self._weather_cache = weather_service.fetch_current()
@@ -98,6 +114,48 @@ class MainMenuScreen(Screen):
             pass
         finally:
             self._weather_loading = False
+
+    def _update_slideshow(self, dt):
+        if not self._slideshow_scanned:
+            self._slideshow_scanned = True
+            self._slideshow_paths = self._scan_slideshow_images()
+            if self._slideshow_paths:
+                self._load_slideshow_image()
+            return
+
+        if not self._slideshow_paths:
+            return
+
+        self._slideshow_elapsed += dt
+        if self._slideshow_elapsed >= SLIDESHOW_INTERVAL_SECONDS and not self._slideshow_loading:
+            self._slideshow_elapsed = 0.0
+            self._slideshow_index = (self._slideshow_index + 1) % len(self._slideshow_paths)
+            self._load_slideshow_image()
+
+    def _scan_slideshow_images(self):
+        if not SLIDESHOW_DIR.exists():
+            return []
+        exts = (".jpg", ".jpeg", ".png")
+        return sorted(str(p) for p in SLIDESHOW_DIR.iterdir() if p.suffix.lower() in exts)
+
+    def _load_slideshow_image(self):
+        self._slideshow_loading = True
+        threading.Thread(target=self._load_slideshow_worker, daemon=True).start()
+
+    def _load_slideshow_worker(self):
+        path = self._slideshow_paths[self._slideshow_index]
+        try:
+            image = pygame.image.load(path).convert()
+            w, h = image.get_size()
+            max_w, max_h = SLIDESHOW_MAX_SIZE
+            scale = min(max_w / w, max_h / h, 1)
+            if scale < 1:
+                image = pygame.transform.smoothscale(image, (int(w * scale), int(h * scale)))
+            self._slideshow_surface = image
+        except (pygame.error, OSError):
+            self._slideshow_surface = None
+        finally:
+            self._slideshow_loading = False
 
     def on_tap(self, pos):
         self.idle_elapsed = 0.0
@@ -133,17 +191,25 @@ class MainMenuScreen(Screen):
 
     def _draw_clock(self, surface):
         surface.fill((0, 0, 0))
-        w, h = surface.get_size()
+        w, _h = surface.get_size()
 
         time_surf = theme.FONT_TIMER_XL.render(
             datetime.datetime.now().strftime("%H:%M:%S"), True, theme.LAVENDER
         )
-        surface.blit(time_surf, time_surf.get_rect(center=(w // 2, h // 2 - 20)))
+        surface.blit(time_surf, time_surf.get_rect(center=(w // 2, 150)))
 
         date_surf = theme.FONT_BODY.render(today_label(), True, (150, 150, 160))
-        surface.blit(date_surf, date_surf.get_rect(center=(w // 2, h // 2 + 90)))
+        surface.blit(date_surf, date_surf.get_rect(center=(w // 2, 250)))
 
         if self._weather_cache:
-            weather_text = f"{self._weather_cache['temp']}°C - {self._weather_cache['description']}"
+            data = self._weather_cache
+            weather_text = f"{data['city']} - {data['temp']}°C - {data['description']}"
             weather_surf = theme.FONT_BODY.render(weather_text, True, theme.GOLD)
-            surface.blit(weather_surf, weather_surf.get_rect(center=(w // 2, h // 2 + 140)))
+            surface.blit(weather_surf, weather_surf.get_rect(center=(w // 2, 290)))
+
+        if self._slideshow_surface:
+            top = 340
+            img_rect = self._slideshow_surface.get_rect(
+                center=(w // 2, top + self._slideshow_surface.get_height() // 2)
+            )
+            surface.blit(self._slideshow_surface, img_rect)
