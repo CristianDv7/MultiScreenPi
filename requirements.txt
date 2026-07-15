@@ -1,4 +1,6 @@
-pygame>=2.5
+# pygame NO va aqui: se instala via "apt install python3-pygame" para que
+# use el SDL2 del sistema (con soporte KMSDRM). Si se instala por pip suele
+# traer un SDL2 propio sin ese driver y falla al abrir la pantalla.
 PyYAML>=6.0
 requests>=2.31
 python-dotenv>=1.0
