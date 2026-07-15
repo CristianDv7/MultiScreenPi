@@ -1,3 +1,4 @@
+import html
 import io
 import re
 import xml.etree.ElementTree as ET
@@ -9,6 +10,8 @@ TIMEOUT = 10
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 MEDIA_NS = "{http://search.yahoo.com/mrss/}"
 IMG_SRC_RE = re.compile(r'<img[^>]+src="([^"]+)"')
+TAG_RE = re.compile(r"<[^>]+>")
+WHITESPACE_RE = re.compile(r"\s+")
 
 
 class NewsFetchError(Exception):
@@ -40,12 +43,31 @@ def fetch_items(feed_url, limit=12):
     for item in items[:limit]:
         if tag == "item":
             title_el = item.find("title")
+            desc_el = item.find("description")
         else:
             title_el = item.find(f"{ATOM_NS}title")
+            desc_el = item.find(f"{ATOM_NS}summary")
+            if desc_el is None:
+                desc_el = item.find(f"{ATOM_NS}content")
+
         title = (title_el.text or "").strip() if title_el is not None else "(sin titulo)"
-        results.append({"title": title, "image_url": _extract_image(item, tag)})
+        description = _clean_html(desc_el.text) if desc_el is not None and desc_el.text else ""
+
+        results.append(
+            {
+                "title": title,
+                "description": description,
+                "image_url": _extract_image(item, tag),
+            }
+        )
 
     return results
+
+
+def _clean_html(raw):
+    text = TAG_RE.sub(" ", raw)
+    text = html.unescape(text)
+    return WHITESPACE_RE.sub(" ", text).strip()
 
 
 def _extract_image(item, tag):
@@ -73,12 +95,18 @@ def _extract_image(item, tag):
     return None
 
 
-def load_thumbnail(url, size):
+def load_image(url, max_width, max_height=None):
     try:
         response = requests.get(url, timeout=TIMEOUT)
         response.raise_for_status()
-        image = pygame.image.load(io.BytesIO(response.content))
-        image = image.convert()
-        return pygame.transform.smoothscale(image, size)
+        image = pygame.image.load(io.BytesIO(response.content)).convert()
     except (requests.RequestException, pygame.error, OSError):
         return None
+
+    w, h = image.get_size()
+    scale = max_width / w if w > max_width else 1
+    if max_height is not None:
+        scale = min(scale, max_height / h if h > max_height else 1)
+    if scale < 1:
+        image = pygame.transform.smoothscale(image, (max(1, int(w * scale)), max(1, int(h * scale))))
+    return image
