@@ -58,6 +58,23 @@ def set_light(entity_id, turn_on):
         raise HomeAssistantError(str(exc)) from exc
 
 
+def get_camera_snapshot(entity_id):
+    base_url = _base_url()
+    if not base_url or not _token() or "REEMPLAZA" in _token():
+        raise HomeAssistantError("Configura home_assistant.base_url y token en config.yaml")
+
+    try:
+        response = requests.get(
+            f"{base_url}/api/camera_proxy/{entity_id}",
+            headers={"Authorization": f"Bearer {_token()}"},
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.content
+    except requests.RequestException as exc:
+        raise HomeAssistantError(str(exc)) from exc
+
+
 def call_service(domain, service, payload):
     base_url = _base_url()
     if not base_url or not _token() or "REEMPLAZA" in _token():

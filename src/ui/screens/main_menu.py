@@ -9,13 +9,13 @@ from core.screen_manager import Screen
 from core.spanish_dates import today_label
 from services import weather_service
 from ui import theme
+from ui.screens.cameras_screen import CamerasScreen
 from ui.screens.home_assistant_screen import HomeAssistantScreen
 from ui.screens.pc_control_screen import PCControlScreen
 from ui.screens.placeholder_screen import PlaceholderScreen
 from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.screens.settings_screen import SettingsScreen
-from ui.screens.social_screen import SocialScreen
 from ui.screens.system_screen import SystemScreen
 from ui.screens.weather_screen import WeatherScreen
 from ui.widgets.button import Button
@@ -29,7 +29,7 @@ MENU_ITEMS = [
     ("Pomodoro", "Temporizador personalizable", PomodoroScreen, theme.GOLD),
     ("Noticias", "Titulares desde un feed", NewsScreen, theme.BLUE),
     ("Home Assistant", "Controla tus luces", HomeAssistantScreen, theme.GREEN),
-    ("Redes Sociales", "Seguidores de YouTube, Facebook e Instagram", SocialScreen, theme.GOLD),
+    ("Camaras", "Ver tus camaras conectadas", CamerasScreen, theme.GOLD),
     ("Clima", "Pronostico por horas", WeatherScreen, theme.BLUE),
     ("Mi PC", "Abrir apps y sitios en tu PC", PCControlScreen, theme.LAVENDER),
     ("Sistema", "Salud de la Pi, apagar y reiniciar", SystemScreen, theme.GRAY_NEUTRAL),
