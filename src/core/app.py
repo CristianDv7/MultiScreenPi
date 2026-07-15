@@ -6,9 +6,12 @@ from core import config
 from core.input import DOWN, MOVE, UP, normalize_event
 from core.screen_manager import ScreenManager
 from core.spanish_dates import time_phrase
-from services import voice_service
+from services import system_service, voice_service
 
 DRAG_THRESHOLD = 12
+HEALTH_CHECK_SECONDS = 300  # 5 minutos
+OVERHEAT_THRESHOLD_C = 75
+OVERHEAT_RESET_C = 65
 
 
 class App:
@@ -39,6 +42,8 @@ class App:
         self._dragging = False
 
         self._announce_elapsed = 0.0
+        self._health_elapsed = 0.0
+        self._overheat_warned = False
 
     def _physical_size(self):
         lw, lh = self.logical_size
@@ -98,6 +103,27 @@ class App:
         except voice_service.VoiceError:
             pass
 
+    def _maybe_check_health(self, dt):
+        self._health_elapsed += dt
+        if self._health_elapsed < HEALTH_CHECK_SECONDS:
+            return
+        self._health_elapsed = 0.0
+        threading.Thread(target=self._check_health, daemon=True).start()
+
+    def _check_health(self):
+        temp = system_service.get_cpu_temp_c()
+        if temp is None:
+            return
+
+        if temp >= OVERHEAT_THRESHOLD_C and not self._overheat_warned:
+            self._overheat_warned = True
+            try:
+                voice_service.speak(f"Atencion, la Raspberry Pi esta muy caliente, {temp} grados")
+            except voice_service.VoiceError:
+                pass
+        elif temp < OVERHEAT_RESET_C:
+            self._overheat_warned = False
+
     def _present(self):
         if self.rotate == 0:
             self.display_surface.blit(self.logical_surface, (0, 0))
@@ -121,6 +147,7 @@ class App:
                 self.screens.handle_event(event)
 
             self._maybe_announce_time(dt)
+            self._maybe_check_health(dt)
 
             self.screens.update(dt)
             self.screens.draw(self.logical_surface)

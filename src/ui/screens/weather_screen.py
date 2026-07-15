@@ -4,7 +4,7 @@ import pygame
 
 from core.screen_manager import Screen
 from core.spanish_dates import today_label
-from services import weather_service
+from services import voice_service, weather_service
 from ui import theme
 from ui.widgets.button import Button
 
@@ -27,9 +27,26 @@ class WeatherScreen(Screen):
     def on_enter(self):
         self.buttons = [
             Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
+            Button((136, 24, 150, 56), "Leer clima", self._read_weather),
             Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load),
         ]
         self._load()
+
+    def _read_weather(self):
+        if not self.current:
+            return
+        data = self.current
+        phrase = (
+            f"El clima en {data['city']} es {data['temp']} grados, {data['description']}. "
+            f"Sensacion termica {data['feels_like']} grados, humedad {data['humidity']} por ciento."
+        )
+        threading.Thread(target=self._speak_worker, args=(phrase,), daemon=True).start()
+
+    def _speak_worker(self, text):
+        try:
+            voice_service.speak(text)
+        except voice_service.VoiceError as exc:
+            self.error = str(exc)
 
     def _load(self):
         if self.loading:

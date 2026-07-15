@@ -1,6 +1,9 @@
+import threading
+
 import pygame
 
 from core.screen_manager import Screen
+from services import voice_service
 from ui import theme
 from ui.widgets.button import Button
 
@@ -111,6 +114,18 @@ class PomodoroScreen(Screen):
         self.phase = "break" if self.phase == "focus" else "focus"
         minutes = self.break_minutes if self.phase == "break" else self.focus_minutes
         self.remaining = minutes * 60
+
+        if self.phase == "break":
+            message = "Se acabo el tiempo de enfoque, toma un descanso"
+        else:
+            message = "Se acabo el descanso, hora de enfocarte de nuevo"
+        threading.Thread(target=self._announce, args=(message,), daemon=True).start()
+
+    def _announce(self, message):
+        try:
+            voice_service.speak(message)
+        except voice_service.VoiceError:
+            pass
 
     def draw(self, surface):
         surface.fill(theme.BG)

@@ -3,7 +3,7 @@ import threading
 import pygame
 
 from core.screen_manager import Screen
-from services import pc_control_service
+from services import pc_control_service, voice_service
 from ui import theme
 from ui.widgets.button import Button
 
@@ -34,9 +34,15 @@ class PCControlScreen(Screen):
         threading.Thread(target=self._trigger_worker, args=(shortcut,), daemon=True).start()
 
     def _trigger_worker(self, shortcut):
+        name = shortcut.get("name", "?")
+        try:
+            voice_service.speak(f"Abriendo {name}")
+        except voice_service.VoiceError:
+            pass
+
         try:
             pc_control_service.trigger(shortcut)
-            self.status = f"{shortcut.get('name')}: abierto"
+            self.status = f"{name}: abierto"
         except pc_control_service.PCControlError as exc:
             self.status = f"Error: {exc}"
 
