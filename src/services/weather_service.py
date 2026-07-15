@@ -3,9 +3,9 @@ import datetime
 import requests
 
 from core import config
+from core.spanish_dates import weekday_name
 
 TIMEOUT = 8
-DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
 
 class WeatherError(Exception):
@@ -81,8 +81,7 @@ def fetch_hourly_forecast(limit=8):
     for item in items[:limit]:
         dt = item.get("dt", 0)
         local_dt = datetime.datetime.utcfromtimestamp(dt + tz_offset)
-        dia = DIAS[local_dt.weekday()]
-        time_label = f"{dia} {local_dt.day}/{local_dt.month} {local_dt.strftime('%H:%M')}"
+        time_label = f"{weekday_name(local_dt)} {local_dt.day}/{local_dt.month} {local_dt.strftime('%H:%M')}"
 
         weather = (item.get("weather") or [{}])[0]
         entries.append(

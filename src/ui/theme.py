@@ -14,6 +14,7 @@ WHATSAPP_GREEN = (37, 211, 102)
 FACEBOOK_BLUE = (24, 119, 242)
 INSTAGRAM_PINK = (225, 48, 108)
 GRAY_NEUTRAL = (184, 181, 181)
+DANGER = (211, 47, 47)
 
 BLUE = INDIGO  # alias usado ya en varias pantallas
 

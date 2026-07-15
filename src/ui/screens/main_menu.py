@@ -1,11 +1,16 @@
+import datetime
+
 from core import config
 from core.screen_manager import Screen
+from core.spanish_dates import today_label
 from ui import theme
 from ui.screens.home_assistant_screen import HomeAssistantScreen
+from ui.screens.pc_control_screen import PCControlScreen
 from ui.screens.placeholder_screen import PlaceholderScreen
 from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.screens.settings_screen import SettingsScreen
+from ui.screens.system_screen import SystemScreen
 from ui.screens.weather_screen import WeatherScreen
 from ui.widgets.button import Button
 
@@ -15,6 +20,8 @@ MENU_ITEMS = [
     ("Home Assistant", "Controla tus luces", HomeAssistantScreen, theme.GREEN),
     ("Metricas Ubicate", "Dashboard desde Supabase", None, theme.GOLD),
     ("Clima", "Pronostico por horas", WeatherScreen, theme.BLUE),
+    ("Mi PC", "Abrir apps y sitios en tu PC", PCControlScreen, theme.LAVENDER),
+    ("Sistema", "Salud de la Pi, apagar y reiniciar", SystemScreen, theme.GRAY_NEUTRAL),
 ]
 
 
@@ -29,8 +36,8 @@ class MainMenuScreen(Screen):
     def on_enter(self):
         self.buttons = []
         top = 140
-        spacing = 16
-        button_height = 130
+        spacing = 14
+        button_height = 108
         width = 600 - 48
 
         for i, (title, subtitle, screen_cls, accent) in enumerate(MENU_ITEMS):
@@ -88,7 +95,7 @@ class MainMenuScreen(Screen):
 
     def draw(self, surface):
         if self.blanked:
-            surface.fill((0, 0, 0))
+            self._draw_clock(surface)
             return
 
         surface.fill(theme.BG)
@@ -101,3 +108,15 @@ class MainMenuScreen(Screen):
 
         if self.settings_button:
             self.settings_button.draw(surface)
+
+    def _draw_clock(self, surface):
+        surface.fill((0, 0, 0))
+        w, h = surface.get_size()
+
+        time_surf = theme.FONT_TIMER_XL.render(
+            datetime.datetime.now().strftime("%H:%M:%S"), True, theme.LAVENDER
+        )
+        surface.blit(time_surf, time_surf.get_rect(center=(w // 2, h // 2 - 20)))
+
+        date_surf = theme.FONT_BODY.render(today_label(), True, (150, 150, 160))
+        surface.blit(date_surf, date_surf.get_rect(center=(w // 2, h // 2 + 90)))

@@ -1,8 +1,12 @@
+import threading
+
 import pygame
 
 from core import config
 from core.input import DOWN, MOVE, UP, normalize_event
 from core.screen_manager import ScreenManager
+from core.spanish_dates import time_phrase
+from services import tts_service
 
 DRAG_THRESHOLD = 12
 
@@ -33,6 +37,8 @@ class App:
         self._touch_start = None
         self._touch_last = None
         self._dragging = False
+
+        self._announce_elapsed = 0.0
 
     def _physical_size(self):
         lw, lh = self.logical_size
@@ -74,6 +80,24 @@ class App:
             self._touch_last = None
             self._dragging = False
 
+    def _maybe_announce_time(self, dt):
+        if not config.get("voice", "hourly_announcement", default=True):
+            return
+        interval = config.get("voice", "interval_minutes", default=60) * 60
+        if interval <= 0:
+            return
+
+        self._announce_elapsed += dt
+        if self._announce_elapsed >= interval:
+            self._announce_elapsed = 0.0
+            threading.Thread(target=self._speak_time, daemon=True).start()
+
+    def _speak_time(self):
+        try:
+            tts_service.speak(time_phrase())
+        except tts_service.TTSError:
+            pass
+
     def _present(self):
         if self.rotate == 0:
             self.display_surface.blit(self.logical_surface, (0, 0))
@@ -95,6 +119,8 @@ class App:
                 kind, pos = normalize_event(event, self._transform_pos)
                 self._handle_touch(kind, pos)
                 self.screens.handle_event(event)
+
+            self._maybe_announce_time(dt)
 
             self.screens.update(dt)
             self.screens.draw(self.logical_surface)
