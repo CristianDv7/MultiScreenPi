@@ -32,7 +32,10 @@ def speak(text, lang="es"):
         raise TTSError(f"No se pudo generar el audio: {exc}") from exc
 
     try:
-        _process = subprocess.Popen(["mpg123", "-q", path])
+        # -f es la ganancia de mpg123: 32768 = volumen normal (100%). La
+        # subimos para compensar que el mixer de la placa al maximo se sigue
+        # escuchando bajo. Si distorsiona, bajar este numero.
+        _process = subprocess.Popen(["mpg123", "-q", "-f", "55000", path])
     except FileNotFoundError as exc:
         raise TTSError("mpg123 no esta instalado (sudo apt install mpg123)") from exc
 
