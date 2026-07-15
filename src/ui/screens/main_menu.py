@@ -3,6 +3,7 @@ from ui import theme
 from ui.screens.placeholder_screen import PlaceholderScreen
 from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
+from ui.screens.settings_screen import SettingsScreen
 from ui.widgets.button import Button
 
 MENU_ITEMS = [
@@ -34,7 +35,7 @@ class MainMenuScreen(Screen):
             )
 
         self.settings_button = Button(
-            (600 - 24 - 56, 24, 56, 56), "*", self._make_opener("Configuracion", None)
+            (600 - 24 - 56, 24, 56, 56), "*", self._make_opener("Configuracion", SettingsScreen)
         )
 
     def _make_opener(self, title, screen_cls):
