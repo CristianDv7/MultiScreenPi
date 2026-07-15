@@ -14,14 +14,30 @@ def _interface():
 
 
 def get_current_ssid():
+    # iwgetid (wireless-tools) puede no estar instalado en DietPi por defecto.
     try:
         result = subprocess.run(
             ["iwgetid", "-r"], capture_output=True, text=True, timeout=5, check=False
         )
         ssid = result.stdout.strip()
-        return ssid or None
-    except (subprocess.SubprocessError, FileNotFoundError):
-        return None
+        if ssid:
+            return ssid
+    except FileNotFoundError:
+        pass
+
+    # Alternativa con "iw" (mas moderno, suele venir instalado).
+    try:
+        result = subprocess.run(
+            ["iw", "dev", _interface(), "link"], capture_output=True, text=True, timeout=5, check=False
+        )
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if line.startswith("SSID:"):
+                return line.split("SSID:", 1)[1].strip()
+    except FileNotFoundError:
+        pass
+
+    return None
 
 
 def set_wifi(ssid, password):
