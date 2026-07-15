@@ -15,6 +15,7 @@ from ui.screens.placeholder_screen import PlaceholderScreen
 from ui.screens.news_screen import NewsScreen
 from ui.screens.pomodoro_screen import PomodoroScreen
 from ui.screens.settings_screen import SettingsScreen
+from ui.screens.social_screen import SocialScreen
 from ui.screens.system_screen import SystemScreen
 from ui.screens.weather_screen import WeatherScreen
 from ui.widgets.button import Button
@@ -28,7 +29,7 @@ MENU_ITEMS = [
     ("Pomodoro", "Temporizador personalizable", PomodoroScreen, theme.GOLD),
     ("Noticias", "Titulares desde un feed", NewsScreen, theme.BLUE),
     ("Home Assistant", "Controla tus luces", HomeAssistantScreen, theme.GREEN),
-    ("Metricas Ubicate", "Dashboard desde Supabase", None, theme.GOLD),
+    ("Redes Sociales", "Seguidores de YouTube, Facebook e Instagram", SocialScreen, theme.GOLD),
     ("Clima", "Pronostico por horas", WeatherScreen, theme.BLUE),
     ("Mi PC", "Abrir apps y sitios en tu PC", PCControlScreen, theme.LAVENDER),
     ("Sistema", "Salud de la Pi, apagar y reiniciar", SystemScreen, theme.GRAY_NEUTRAL),

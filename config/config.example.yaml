@@ -27,9 +27,18 @@ alexa:
   # Herramientas de desarrollo > Acciones, filtra por "alexa_media".
   notify_service: "notify.alexa_media_REEMPLAZA"
 
-supabase:
-  url: "https://xxxx.supabase.co"
-  key: "REEMPLAZA_CON_TU_KEY"
+social:
+  youtube:
+    api_key: "REEMPLAZA_CON_TU_KEY"
+    channel_id: "REEMPLAZA_CON_TU_CHANNEL_ID"
+  facebook:
+    page_id: "REEMPLAZA_CON_TU_PAGE_ID"
+    access_token: "REEMPLAZA_CON_TU_PAGE_ACCESS_TOKEN"
+  instagram:
+    business_account_id: "REEMPLAZA_CON_TU_IG_BUSINESS_ID"
+    # Si lo dejas vacio, usa el mismo access_token de facebook (es el mismo
+    # Page Access Token el que sirve para consultar Instagram Graph API).
+    access_token: ""
 
 weather:
   api_key: "REEMPLAZA_CON_TU_KEY"
