@@ -47,20 +47,28 @@ def fetch_items(feed_url, limit=12):
         if tag == "item":
             title_el = item.find("title")
             desc_el = item.find("description")
+            content_el = item.find(f"{CONTENT_NS}encoded")
         else:
             title_el = item.find(f"{ATOM_NS}title")
             desc_el = item.find(f"{ATOM_NS}summary")
+            content_el = item.find(f"{ATOM_NS}content")
 
         title = (title_el.text or "").strip() if title_el is not None else "(sin titulo)"
 
-        # Solo el resumen corto (description/summary), no el cuerpo completo del articulo.
+        # description: resumen corto, para mostrar en pantalla.
         desc_text = desc_el.text if desc_el is not None and desc_el.text else ""
         description = _clean_html(desc_text) if desc_text else ""
+
+        # content: cuerpo completo (content:encoded / Atom content) si el feed lo trae,
+        # para que Alexa lea algo mas completo que el resumen. Si no hay, usa el resumen.
+        content_text = content_el.text if content_el is not None and content_el.text else ""
+        content = _clean_html(content_text) if content_text else description
 
         results.append(
             {
                 "title": title,
                 "description": description,
+                "content": content,
                 "image_url": _extract_image(item, tag),
             }
         )

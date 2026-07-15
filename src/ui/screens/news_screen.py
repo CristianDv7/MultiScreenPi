@@ -15,7 +15,7 @@ DESC_LINE_HEIGHT = 26
 CHEVRON_SPACE = 34
 MAX_IMAGE_WIDTH = 600 - 48 - PADDING * 2
 MAX_IMAGE_HEIGHT = 260
-MAX_SPOKEN_CHARS = 500
+MAX_SPOKEN_CHARS = 1500
 
 
 class NewsScreen(Screen):
@@ -97,6 +97,7 @@ class NewsScreen(Screen):
             {
                 "title": item["title"],
                 "description": item.get("description", ""),
+                "content": item.get("content", ""),
                 "image_url": item.get("image_url"),
                 "expanded": False,
                 "image_surface": None,
@@ -126,7 +127,7 @@ class NewsScreen(Screen):
                 item["image_loading"] = True
                 threading.Thread(target=self._load_image_worker, args=(item,), daemon=True).start()
 
-            spoken_text = _truncate(f"{item['title']}. {item['description']}".strip(), MAX_SPOKEN_CHARS)
+            spoken_text = _truncate(f"{item['title']}. {item['content']}".strip(), MAX_SPOKEN_CHARS)
             threading.Thread(target=self._speak_worker, args=(spoken_text,), daemon=True).start()
 
     def _speak_worker(self, text):
