@@ -1,3 +1,4 @@
+import datetime
 import threading
 
 import pygame
@@ -7,10 +8,22 @@ from services import weather_service
 from ui import theme
 from ui.widgets.button import Button
 
-CURRENT_CARD = pygame.Rect(24, 100, 600 - 48, 180)
-FORECAST_TOP = 330
+DATE_Y = 92
+CURRENT_CARD = pygame.Rect(24, 140, 600 - 48, 180)
+FORECAST_TOP = 370
 ROW_HEIGHT = 60
 ROW_GAP = 8
+
+DIAS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
+MESES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
+
+def _today_label():
+    now = datetime.datetime.now()
+    return f"{DIAS[now.weekday()]} {now.day} de {MESES[now.month - 1]} de {now.year}"
 
 
 class WeatherScreen(Screen):
@@ -59,6 +72,9 @@ class WeatherScreen(Screen):
         for button in self.buttons:
             button.draw(surface)
 
+        date_surf = theme.FONT_BODY.render(_today_label(), True, theme.TEXT_MUTED)
+        surface.blit(date_surf, (24, DATE_Y))
+
         pygame.draw.rect(surface, theme.SURFACE, CURRENT_CARD, border_radius=24)
         pygame.draw.rect(surface, theme.INDIGO, CURRENT_CARD, width=3, border_radius=24)
 
@@ -94,7 +110,7 @@ class WeatherScreen(Screen):
             row_rect = pygame.Rect(24, row_y, w - 48, ROW_HEIGHT)
             pygame.draw.rect(surface, theme.SURFACE, row_rect, border_radius=14)
 
-            time_surf = theme.FONT_BODY.render(entry["time"], True, theme.TEXT)
+            time_surf = theme.FONT_SMALL.render(entry["time"], True, theme.TEXT)
             surface.blit(time_surf, time_surf.get_rect(midleft=(row_rect.left + 20, row_rect.centery)))
 
             desc_surf = theme.FONT_SMALL.render(entry["description"], True, theme.TEXT_MUTED)

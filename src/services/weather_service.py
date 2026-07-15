@@ -65,10 +65,19 @@ def fetch_hourly_forecast(limit=8):
     except requests.RequestException as exc:
         raise WeatherError(str(exc)) from exc
 
+    # Ordenamos explicitamente por timestamp: la API deberia devolverlo ya
+    # ordenado, pero as segura que nunca salga desordenado en pantalla.
+    items = sorted(data.get("list", []), key=lambda item: item.get("dt", 0))
+
     entries = []
-    for item in data.get("list", [])[:limit]:
+    for item in items[:limit]:
         dt_txt = item.get("dt_txt", "")  # "2026-07-15 18:00:00"
-        time_label = dt_txt.split(" ")[1][:5] if " " in dt_txt else dt_txt
+        if " " in dt_txt:
+            date_part, time_part = dt_txt.split(" ")
+            year, month, day = date_part.split("-")
+            time_label = f"{day}/{month} {time_part[:5]}"
+        else:
+            time_label = dt_txt
         weather = (item.get("weather") or [{}])[0]
         entries.append(
             {

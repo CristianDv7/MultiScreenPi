@@ -8,8 +8,9 @@ from ui.widgets.button import Button
 from ui.widgets.keyboard import Keyboard
 
 FIELD_HEIGHT = 50
-CONTENT_TOP = 100
-KEYBOARD_TOP = 545
+TITLE_Y = 100
+CONTENT_TOP = 155
+KEYBOARD_TOP = 720  # deja el teclado pegado al fondo real de la pantalla (1024)
 VIEWPORT_HEIGHT = KEYBOARD_TOP - CONTENT_TOP - 10
 
 
@@ -180,7 +181,7 @@ class SettingsScreen(Screen):
         w, h = surface.get_size()
 
         title_surf = theme.FONT_TITLE.render("Configuracion", True, theme.TEXT)
-        surface.blit(title_surf, (24, 64))
+        surface.blit(title_surf, (24, TITLE_Y))
 
         for button in self.buttons:
             button.draw(surface)
