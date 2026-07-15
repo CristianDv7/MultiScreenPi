@@ -1,8 +1,10 @@
 import pygame
 
 from core import config
-from core.input import TAP, normalize_event
+from core.input import DOWN, MOVE, UP, normalize_event
 from core.screen_manager import ScreenManager
+
+DRAG_THRESHOLD = 12
 
 
 class App:
@@ -28,6 +30,10 @@ class App:
         self.screens = ScreenManager()
         self.running = True
 
+        self._touch_start = None
+        self._touch_last = None
+        self._dragging = False
+
     def _physical_size(self):
         lw, lh = self.logical_size
         if self.rotate in (90, 270):
@@ -45,6 +51,28 @@ class App:
         if self.rotate == 180:
             return pw - px, ph - py
         return px, py
+
+    def _handle_touch(self, kind, pos):
+        if kind == DOWN:
+            self._touch_start = pos
+            self._touch_last = pos
+            self._dragging = False
+        elif kind == MOVE and self._touch_last is not None:
+            dy = pos[1] - self._touch_last[1]
+            if not self._dragging:
+                total_dx = pos[0] - self._touch_start[0]
+                total_dy = pos[1] - self._touch_start[1]
+                if (total_dx**2 + total_dy**2) ** 0.5 > DRAG_THRESHOLD:
+                    self._dragging = True
+            if self._dragging:
+                self.screens.handle_scroll(dy)
+            self._touch_last = pos
+        elif kind == UP:
+            if not self._dragging and self._touch_start is not None:
+                self.screens.handle_tap(self._touch_start)
+            self._touch_start = None
+            self._touch_last = None
+            self._dragging = False
 
     def _present(self):
         if self.rotate == 0:
@@ -65,8 +93,7 @@ class App:
                     continue
 
                 kind, pos = normalize_event(event, self._transform_pos)
-                if kind == TAP:
-                    self.screens.handle_tap(pos)
+                self._handle_touch(kind, pos)
                 self.screens.handle_event(event)
 
             self.screens.update(dt)

@@ -11,6 +11,9 @@ class Screen:
     def on_tap(self, pos):
         pass
 
+    def on_scroll(self, dy):
+        pass
+
     def update(self, dt):
         pass
 
@@ -52,6 +55,10 @@ class ScreenManager:
     def handle_tap(self, pos):
         if self.current:
             self.current.on_tap(pos)
+
+    def handle_scroll(self, dy):
+        if self.current:
+            self.current.on_scroll(dy)
 
     def update(self, dt):
         if self.current:

@@ -21,7 +21,11 @@ weather:
   location: "Bogota,CO"
 
 news:
-  feed_url: "https://example.com/rss"
+  feeds:
+    - name: "El Comercio"
+      url: "https://www.elcomercio.com/feed/"
+    - name: "Otro feed"
+      url: "https://example.com/rss"
 
 wifi:
   interface: "wlan0"
