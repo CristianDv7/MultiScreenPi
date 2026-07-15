@@ -191,25 +191,24 @@ class MainMenuScreen(Screen):
 
     def _draw_clock(self, surface):
         surface.fill((0, 0, 0))
-        w, _h = surface.get_size()
+        w, h = surface.get_size()
+        center_x = w // 2
 
         time_surf = theme.FONT_TIMER_XL.render(
             datetime.datetime.now().strftime("%H:%M:%S"), True, theme.LAVENDER
         )
-        surface.blit(time_surf, time_surf.get_rect(center=(w // 2, 150)))
+        surface.blit(time_surf, time_surf.get_rect(center=(center_x, 190)))
 
         date_surf = theme.FONT_BODY.render(today_label(), True, (150, 150, 160))
-        surface.blit(date_surf, date_surf.get_rect(center=(w // 2, 250)))
+        surface.blit(date_surf, date_surf.get_rect(center=(center_x, 310)))
 
         if self._weather_cache:
             data = self._weather_cache
             weather_text = f"{data['city']} - {data['temp']}°C - {data['description']}"
             weather_surf = theme.FONT_BODY.render(weather_text, True, theme.GOLD)
-            surface.blit(weather_surf, weather_surf.get_rect(center=(w // 2, 290)))
+            surface.blit(weather_surf, weather_surf.get_rect(center=(center_x, 352)))
 
         if self._slideshow_surface:
-            top = 340
-            img_rect = self._slideshow_surface.get_rect(
-                center=(w // 2, top + self._slideshow_surface.get_height() // 2)
-            )
+            top = 410
+            img_rect = self._slideshow_surface.get_rect(center=(center_x, top + self._slideshow_surface.get_height() // 2))
             surface.blit(self._slideshow_surface, img_rect)
