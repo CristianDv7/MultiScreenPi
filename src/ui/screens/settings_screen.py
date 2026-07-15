@@ -28,11 +28,13 @@ class SettingsScreen(Screen):
         self.saving = False
         self.buttons = []
         self.keyboard = Keyboard(top=545)
+        self._timeout_touched = False
 
     def on_enter(self):
         current = wifi_service.get_current_ssid()
         self.status = f"Conectado a: {current}" if current else "Sin conexion WiFi detectada"
         self.timeout_value = str(config.get("display", "screen_timeout_seconds", default=60))
+        self._timeout_touched = False
         self._build_buttons()
 
     def _build_buttons(self):
@@ -85,6 +87,9 @@ class SettingsScreen(Screen):
             return
         if TIMEOUT_RECT.collidepoint(pos):
             self.active_field = "timeout"
+            if not self._timeout_touched:
+                self.timeout_value = ""
+                self._timeout_touched = True
             return
 
         result = self.keyboard.handle_tap(pos)
