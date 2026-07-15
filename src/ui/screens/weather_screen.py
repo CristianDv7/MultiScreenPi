@@ -1,4 +1,3 @@
-import datetime
 import threading
 
 import pygame
@@ -9,10 +8,9 @@ from services import weather_service
 from ui import theme
 from ui.widgets.button import Button
 
-DATE_Y = 88
-CLOCK_Y = 118
-CURRENT_CARD = pygame.Rect(24, 220, 600 - 48, 180)
-FORECAST_TOP = 450
+DATE_Y = 92
+CURRENT_CARD = pygame.Rect(24, 140, 600 - 48, 180)
+FORECAST_TOP = 370
 ROW_HEIGHT = 60
 ROW_GAP = 8
 
@@ -66,9 +64,6 @@ class WeatherScreen(Screen):
         date_surf = theme.FONT_BODY.render(today_label(), True, theme.TEXT_MUTED)
         surface.blit(date_surf, (24, DATE_Y))
 
-        clock_surf = theme.FONT_TIMER.render(datetime.datetime.now().strftime("%H:%M:%S"), True, theme.INDIGO)
-        surface.blit(clock_surf, (24, CLOCK_Y))
-
         pygame.draw.rect(surface, theme.SURFACE, CURRENT_CARD, border_radius=24)
         pygame.draw.rect(surface, theme.INDIGO, CURRENT_CARD, width=3, border_radius=24)
 
@@ -88,8 +83,8 @@ class WeatherScreen(Screen):
         data = self.current
         surface.blit(theme.FONT_BODY.render(data["city"], True, theme.TEXT), (x, y))
 
-        temp_surf = theme.FONT_TITLE.render(f"{data['temp']}°C", True, theme.TEXT)
-        surface.blit(temp_surf, (CURRENT_CARD.right - 24 - temp_surf.get_width(), CURRENT_CARD.top + 24))
+        temp_surf = theme.FONT_TIMER.render(f"{data['temp']}°C", True, theme.TEXT)
+        surface.blit(temp_surf, (CURRENT_CARD.right - 24 - temp_surf.get_width(), CURRENT_CARD.top + 30))
 
         y += 44
         surface.blit(theme.FONT_BODY.render(data["description"], True, theme.TEXT_MUTED), (x, y))

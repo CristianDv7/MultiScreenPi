@@ -22,7 +22,7 @@ import subprocess
 import webbrowser
 
 PORT = 5566
-TOKEN = "CAMBIA_ESTE_TOKEN"
+TOKEN = "eldv71998"
 
 # Nombre -> comando para lanzar la app. Ajusta las rutas a lo que tengas instalado.
 APPS = {

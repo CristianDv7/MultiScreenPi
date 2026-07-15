@@ -1,8 +1,10 @@
 import datetime
+import threading
 
 from core import config
 from core.screen_manager import Screen
 from core.spanish_dates import today_label
+from services import weather_service
 from ui import theme
 from ui.screens.home_assistant_screen import HomeAssistantScreen
 from ui.screens.pc_control_screen import PCControlScreen
@@ -13,6 +15,8 @@ from ui.screens.settings_screen import SettingsScreen
 from ui.screens.system_screen import SystemScreen
 from ui.screens.weather_screen import WeatherScreen
 from ui.widgets.button import Button
+
+WEATHER_REFRESH_SECONDS = 600  # 10 minutos
 
 MENU_ITEMS = [
     ("Pomodoro", "Temporizador personalizable", PomodoroScreen, theme.GOLD),
@@ -32,6 +36,10 @@ class MainMenuScreen(Screen):
         self.settings_button = None
         self.idle_elapsed = 0.0
         self.blanked = False
+
+        self._weather_cache = None
+        self._weather_loading = False
+        self._weather_elapsed = WEATHER_REFRESH_SECONDS  # fuerza una carga inicial
 
     def on_enter(self):
         self.buttons = []
@@ -77,6 +85,20 @@ class MainMenuScreen(Screen):
         else:
             self.blanked = False
 
+        self._weather_elapsed += dt
+        if self._weather_elapsed >= WEATHER_REFRESH_SECONDS and not self._weather_loading:
+            self._weather_elapsed = 0.0
+            self._weather_loading = True
+            threading.Thread(target=self._fetch_weather, daemon=True).start()
+
+    def _fetch_weather(self):
+        try:
+            self._weather_cache = weather_service.fetch_current()
+        except weather_service.WeatherError:
+            pass
+        finally:
+            self._weather_loading = False
+
     def on_tap(self, pos):
         self.idle_elapsed = 0.0
         if self.blanked:
@@ -120,3 +142,8 @@ class MainMenuScreen(Screen):
 
         date_surf = theme.FONT_BODY.render(today_label(), True, (150, 150, 160))
         surface.blit(date_surf, date_surf.get_rect(center=(w // 2, h // 2 + 90)))
+
+        if self._weather_cache:
+            weather_text = f"{self._weather_cache['temp']}°C - {self._weather_cache['description']}"
+            weather_surf = theme.FONT_BODY.render(weather_text, True, theme.GOLD)
+            surface.blit(weather_surf, weather_surf.get_rect(center=(w // 2, h // 2 + 140)))
