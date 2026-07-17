@@ -181,7 +181,7 @@ class MainMenuScreen(Screen):
 
         surface.fill(theme.BG)
 
-        header = theme.FONT_TITLE.render("MultiScreenPi", True, theme.TEXT)
+        header = theme.FONT_TITLE.render("Hola CristianJ7", True, theme.TEXT)
         surface.blit(header, (24, 50))
 
         for button in self.buttons:
