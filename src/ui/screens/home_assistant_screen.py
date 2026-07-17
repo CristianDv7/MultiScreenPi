@@ -7,10 +7,13 @@ from services import home_assistant_service as ha
 from ui import theme
 from ui.widgets.button import Button
 
-CARD_HEIGHT = 76
-CARD_GAP = 14
-COLUMN_GAP = 16
+CARD_HEIGHT = 84
+CARD_GAP = 16
 LIST_TOP = 100
+
+TOGGLE_WIDTH = 64
+TOGGLE_HEIGHT = 34
+THUMB_MARGIN = 4
 
 
 class HomeAssistantScreen(Screen):
@@ -100,38 +103,41 @@ class HomeAssistantScreen(Screen):
         elif not self.lights:
             surface.blit(theme.FONT_BODY.render("No se encontraron luces.", True, theme.TEXT_MUTED), (24, y))
         else:
-            column_width = (card_width - COLUMN_GAP) / 2
             for index, light in enumerate(self.lights):
-                col = index % 2
-                row = index // 2
-                x = 24 + col * (column_width + COLUMN_GAP)
-                rect = pygame.Rect(int(x), int(y + row * (CARD_HEIGHT + CARD_GAP)), int(column_width), CARD_HEIGHT)
+                rect = pygame.Rect(24, y, card_width, CARD_HEIGHT)
                 is_on = light["state"] == "on"
 
-                pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=16)
+                pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=20)
                 bar_color = theme.GREEN if is_on else theme.TEXT_MUTED
                 bar_rect = pygame.Rect(rect.left, rect.top, 6, rect.height)
                 pygame.draw.rect(
-                    surface, bar_color, bar_rect, border_top_left_radius=16, border_bottom_left_radius=16
+                    surface, bar_color, bar_rect, border_top_left_radius=20, border_bottom_left_radius=20
                 )
 
-                name_surf = theme.FONT_SMALL.render(light["name"], True, theme.TEXT)
+                name_surf = theme.FONT_BODY.render(light["name"], True, theme.TEXT)
                 clip = surface.get_clip()
-                surface.set_clip(rect.inflate(-14, 0))
-                surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 16, rect.centery - 10)))
+                surface.set_clip(rect.inflate(-160, 0))
+                surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 28, rect.centery)))
                 surface.set_clip(clip)
 
-                status_color = theme.GREEN if is_on else theme.TEXT_MUTED
-                status_surf = theme.FONT_SMALL.render("ON" if is_on else "OFF", True, status_color)
-                surface.blit(status_surf, status_surf.get_rect(midleft=(rect.left + 16, rect.centery + 14)))
+                self._draw_toggle(surface, rect, is_on)
 
                 self._item_rects.append((rect, index))
-
-            rows = (len(self.lights) + 1) // 2
-            y += rows * (CARD_HEIGHT + CARD_GAP)
+                y += CARD_HEIGHT + CARD_GAP
 
         self.content_height = y + int(self.scroll) - LIST_TOP
         surface.set_clip(None)
+
+    def _draw_toggle(self, surface, card_rect, is_on):
+        track = pygame.Rect(0, 0, TOGGLE_WIDTH, TOGGLE_HEIGHT)
+        track.midright = (card_rect.right - 24, card_rect.centery)
+
+        track_color = theme.GREEN if is_on else theme.GRAY_NEUTRAL
+        pygame.draw.rect(surface, track_color, track, border_radius=TOGGLE_HEIGHT // 2)
+
+        thumb_radius = TOGGLE_HEIGHT // 2 - THUMB_MARGIN
+        thumb_x = track.right - thumb_radius - THUMB_MARGIN if is_on else track.left + thumb_radius + THUMB_MARGIN
+        pygame.draw.circle(surface, theme.BG, (thumb_x, track.centery), thumb_radius)
 
 
 def _wrap(text, font, max_width):
