@@ -1,4 +1,5 @@
 import datetime
+import time
 
 import requests
 
@@ -6,6 +7,9 @@ from core import config
 from core.spanish_dates import weekday_name
 
 TIMEOUT = 8
+CACHE_TTL = 900  # 15 minutos: evita gastar la cuota diaria de la API
+
+_cache = {"current": None, "current_at": 0.0, "forecast": None, "forecast_at": 0.0}
 
 
 class WeatherError(Exception):
@@ -27,7 +31,11 @@ def _check_config():
         raise WeatherError("Configura weather.location en config.yaml")
 
 
-def fetch_current():
+def fetch_current(force=False):
+    now = time.monotonic()
+    if not force and _cache["current"] and now - _cache["current_at"] < CACHE_TTL:
+        return _cache["current"]
+
     _check_config()
 
     try:
@@ -44,17 +52,24 @@ def fetch_current():
     weather = (data.get("weather") or [{}])[0]
     main = data.get("main", {})
 
-    return {
+    result = {
         "city": data.get("name", _location()),
         "temp": round(main.get("temp", 0)),
         "feels_like": round(main.get("feels_like", 0)),
         "humidity": main.get("humidity"),
         "description": weather.get("description", "").capitalize(),
     }
+    _cache["current"] = result
+    _cache["current_at"] = now
+    return result
 
 
-def fetch_hourly_forecast(limit=8):
+def fetch_hourly_forecast(limit=8, force=False):
     """Pronostico en bloques de 3 horas (endpoint gratuito /forecast de OpenWeatherMap)."""
+    now = time.monotonic()
+    if not force and _cache["forecast"] and now - _cache["forecast_at"] < CACHE_TTL:
+        return _cache["forecast"][:limit]
+
     _check_config()
 
     try:
@@ -78,7 +93,7 @@ def fetch_hourly_forecast(limit=8):
     tz_offset = data.get("city", {}).get("timezone", 0)
 
     entries = []
-    for item in items[:limit]:
+    for item in items:
         dt = item.get("dt", 0)
         local_dt = datetime.datetime.utcfromtimestamp(dt + tz_offset)
         time_label = f"{weekday_name(local_dt)} {local_dt.day}/{local_dt.month} {local_dt.strftime('%H:%M')}"
@@ -92,4 +107,6 @@ def fetch_hourly_forecast(limit=8):
             }
         )
 
-    return entries
+    _cache["forecast"] = entries
+    _cache["forecast_at"] = now
+    return entries[:limit]

@@ -28,9 +28,12 @@ class WeatherScreen(Screen):
         self.buttons = [
             Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
             Button((136, 24, 150, 56), "Leer clima", self._read_weather),
-            Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load),
+            Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._force_load),
         ]
         self._load()
+
+    def _force_load(self):
+        self._load(force=True)
 
     def _read_weather(self):
         if not self.current:
@@ -48,19 +51,19 @@ class WeatherScreen(Screen):
         except voice_service.VoiceError as exc:
             self.error = str(exc)
 
-    def _load(self):
+    def _load(self, force=False):
         if self.loading:
             return
         self.loading = True
         self.error = None
         self.current = None
         self.forecast = []
-        threading.Thread(target=self._load_worker, daemon=True).start()
+        threading.Thread(target=self._load_worker, args=(force,), daemon=True).start()
 
-    def _load_worker(self):
+    def _load_worker(self, force):
         try:
-            self.current = weather_service.fetch_current()
-            self.forecast = weather_service.fetch_hourly_forecast(limit=8)
+            self.current = weather_service.fetch_current(force=force)
+            self.forecast = weather_service.fetch_hourly_forecast(limit=8, force=force)
         except weather_service.WeatherError as exc:
             self.error = str(exc)
         finally:

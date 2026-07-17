@@ -32,15 +32,25 @@ def list_lights():
     except requests.RequestException as exc:
         raise HomeAssistantError(str(exc)) from exc
 
-    lights = []
+    # Si configuras home_assistant.entities, solo se muestran esas luces
+    # (en el orden que las listes). Si no, se muestran todas las que
+    # empiecen con "light." automaticamente.
+    allowed = config.get("home_assistant", "entities", default=None)
+
+    lights_by_id = {}
     for entity in response.json():
         entity_id = entity.get("entity_id", "")
-        if not entity_id.startswith("light."):
+        if allowed:
+            if entity_id not in allowed:
+                continue
+        elif not entity_id.startswith("light."):
             continue
         name = entity.get("attributes", {}).get("friendly_name", entity_id)
-        lights.append({"entity_id": entity_id, "name": name, "state": entity.get("state")})
+        lights_by_id[entity_id] = {"entity_id": entity_id, "name": name, "state": entity.get("state")}
 
-    return lights
+    if allowed:
+        return [lights_by_id[eid] for eid in allowed if eid in lights_by_id]
+    return list(lights_by_id.values())
 
 
 def set_light(entity_id, turn_on):

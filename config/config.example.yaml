@@ -21,6 +21,11 @@ voice:
 home_assistant:
   base_url: "http://homeassistant.local:8123"
   token: "REEMPLAZA_CON_TU_TOKEN"
+  # Opcional: si lo dejas, solo se muestran (y en ese orden) estas luces.
+  # Si lo quitas o dejas vacio, se muestran todas las light.* automaticamente.
+  # entities:
+  #   - light.sala
+  #   - light.cuarto
 
 alexa:
   # Nombre exacto del servicio notify para tu Echo. Buscalo en HA:
