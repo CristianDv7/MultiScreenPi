@@ -4,7 +4,7 @@ from core import config
 from core.screen_manager import Screen
 from services import system_service, wifi_service
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 from ui.widgets.keyboard import Keyboard
 
 FIELD_HEIGHT = 50
@@ -35,7 +35,7 @@ class SettingsScreen(Screen):
     def on_enter(self):
         self._load_values()
         self.buttons = [
-            Button((24, 24, 130, 56), "< Volver", self.screen_manager.pop),
+            back_button(24, 24, self.screen_manager.pop),
             Button(
                 (600 - 24 - 130, 24, 130, 56),
                 "Ocultar" if self.show_password else "Ver",

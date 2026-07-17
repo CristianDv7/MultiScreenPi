@@ -5,7 +5,7 @@ import pygame
 from core.screen_manager import Screen
 from services import voice_service
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 FOCUS_STEP = 5
 BREAK_STEP = 1
@@ -31,7 +31,7 @@ class PomodoroScreen(Screen):
         w = 600
         start_bg = theme.GOLD if self.running else theme.GREEN
         self.buttons = [
-            Button((24, 24, 100, 56), "< Volver", self._go_back),
+            back_button(24, 24, self._go_back),
             Button((24, 560, STEP_BTN_SIZE, STEP_BTN_SIZE), "-", self._dec_focus, bg=theme.SURFACE),
             Button(
                 (w - 24 - STEP_BTN_SIZE, 560, STEP_BTN_SIZE, STEP_BTN_SIZE), "+", self._inc_focus, bg=theme.SURFACE

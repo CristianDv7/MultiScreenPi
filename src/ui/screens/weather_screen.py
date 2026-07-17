@@ -6,7 +6,7 @@ from core.screen_manager import Screen
 from core.spanish_dates import today_label
 from services import voice_service, weather_service
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 DATE_Y = 92
 CURRENT_CARD = pygame.Rect(24, 140, 600 - 48, 180)
@@ -26,8 +26,8 @@ class WeatherScreen(Screen):
 
     def on_enter(self):
         self.buttons = [
-            Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
-            Button((136, 24, 150, 56), "Leer clima", self._read_weather),
+            back_button(24, 24, self.screen_manager.pop),
+            Button((166, 24, 150, 56), "Leer clima", self._read_weather),
             Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._force_load),
         ]
         self._load()

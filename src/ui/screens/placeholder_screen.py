@@ -1,6 +1,6 @@
 from core.screen_manager import Screen
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 
 class PlaceholderScreen(Screen):
@@ -12,7 +12,7 @@ class PlaceholderScreen(Screen):
         self.back_button = None
 
     def on_enter(self):
-        self.back_button = Button((24, 24, 130, 56), "< Volver", self.screen_manager.pop)
+        self.back_button = back_button(24, 24, self.screen_manager.pop)
 
     def on_tap(self, pos):
         if self.back_button:

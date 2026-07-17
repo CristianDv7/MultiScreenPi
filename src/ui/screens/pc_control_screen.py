@@ -5,7 +5,7 @@ import pygame
 from core.screen_manager import Screen
 from services import pc_control_service, voice_service
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 CARD_HEIGHT = 80
 CARD_GAP = 16
@@ -38,7 +38,7 @@ class PCControlScreen(Screen):
         self.shortcuts = pc_control_service.get_shortcuts()
         self.status = None
         self.scroll = 0.0
-        self.buttons = [Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop)]
+        self.buttons = [back_button(24, 24, self.screen_manager.pop)]
         self._load_audio_devices()
 
     def _load_audio_devices(self):

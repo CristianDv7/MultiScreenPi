@@ -5,7 +5,7 @@ import pygame
 from core.screen_manager import Screen
 from services import home_assistant_service as ha
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 CARD_HEIGHT = 84
 CARD_GAP = 16
@@ -29,7 +29,7 @@ class HomeAssistantScreen(Screen):
 
     def on_enter(self):
         self.buttons = [
-            Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
+            back_button(24, 24, self.screen_manager.pop),
             Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load),
         ]
         self._load()

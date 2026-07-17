@@ -5,7 +5,7 @@ import pygame
 from core.screen_manager import Screen
 from services import system_service
 from ui import theme
-from ui.widgets.button import Button
+from ui.widgets.button import Button, back_button
 
 STATS_CARD = pygame.Rect(24, 100, 600 - 48, 220)
 CONFIRM_TIMEOUT = 5.0
@@ -65,7 +65,7 @@ class SystemScreen(Screen):
         reboot_label = "Toca de nuevo para reiniciar" if self.confirm_action == "reboot" else "Reiniciar"
         shutdown_label = "Toca de nuevo para apagar" if self.confirm_action == "shutdown" else "Apagar"
         return [
-            Button((24, 24, 100, 56), "< Volver", self.screen_manager.pop),
+            back_button(24, 24, self.screen_manager.pop),
             Button((600 - 24 - 150, 24, 150, 56), "Actualizar", self._load),
             Button((24, 370, 600 - 48, 70), reboot_label, self._reboot_tap, accent=theme.GOLD),
             Button(
