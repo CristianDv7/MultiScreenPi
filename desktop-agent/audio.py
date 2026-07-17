@@ -39,8 +39,19 @@ class IPolicyConfig(IUnknown):
     ]
 
 
+EDATAFLOW_ERENDER = 0  # solo dispositivos de salida (altavoces/auriculares), no microfonos
+
+
+def _active_output_devices():
+    return [
+        d
+        for d in AudioUtilities.GetAllDevices(data_flow=EDATAFLOW_ERENDER)
+        if str(d.state) == "AudioDeviceState.Active"
+    ]
+
+
 def list_active_devices():
-    return [d.FriendlyName for d in AudioUtilities.GetAllDevices() if str(d.state) == "AudioDeviceState.Active"]
+    return [d.FriendlyName for d in _active_output_devices()]
 
 
 def get_current_device_name():
@@ -48,8 +59,8 @@ def get_current_device_name():
 
 
 def set_default_device(name):
-    """Busca (sin importar mayusculas/parcial) un dispositivo activo por nombre y lo pone por defecto."""
-    devices = [d for d in AudioUtilities.GetAllDevices() if str(d.state) == "AudioDeviceState.Active"]
+    """Busca (sin importar mayusculas/parcial) un dispositivo de salida activo por nombre y lo pone por defecto."""
+    devices = _active_output_devices()
     for device in devices:
         if name.lower() in device.FriendlyName.lower():
             policy_config = CoCreateInstance(CLSID_PolicyConfigClient, IPolicyConfig, CLSCTX_ALL)

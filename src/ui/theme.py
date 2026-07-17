@@ -28,8 +28,8 @@ TEXT_ON_ACCENT = (12, 12, 12)
 
 FONT_PATH = None  # usa la fuente por defecto de pygame hasta que agreguemos una custom en assets/fonts
 
-FONT_TIMER_XL = pygame.font.Font(FONT_PATH, 150)
-FONT_TIMER = pygame.font.Font(FONT_PATH, 64)
-FONT_TITLE = pygame.font.Font(FONT_PATH, 36)
-FONT_BODY = pygame.font.Font(FONT_PATH, 26)
-FONT_SMALL = pygame.font.Font(FONT_PATH, 20)
+FONT_TIMER_XL = pygame.font.Font(FONT_PATH, 165)
+FONT_TIMER = pygame.font.Font(FONT_PATH, 72)
+FONT_TITLE = pygame.font.Font(FONT_PATH, 40)
+FONT_BODY = pygame.font.Font(FONT_PATH, 30)
+FONT_SMALL = pygame.font.Font(FONT_PATH, 23)
