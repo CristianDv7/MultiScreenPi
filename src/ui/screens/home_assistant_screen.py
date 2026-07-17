@@ -116,7 +116,8 @@ class HomeAssistantScreen(Screen):
 
                 name_surf = theme.FONT_BODY.render(light["name"], True, theme.TEXT)
                 clip = surface.get_clip()
-                surface.set_clip(rect.inflate(-160, 0))
+                text_clip = pygame.Rect(rect.left, rect.top, rect.width - 120, rect.height)
+                surface.set_clip(text_clip)
                 surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 28, rect.centery)))
                 surface.set_clip(clip)
 
