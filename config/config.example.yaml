@@ -21,11 +21,14 @@ voice:
 home_assistant:
   base_url: "http://homeassistant.local:8123"
   token: "REEMPLAZA_CON_TU_TOKEN"
-  # Opcional: si lo dejas, solo se muestran (y en ese orden) estas luces.
-  # Si lo quitas o dejas vacio, se muestran todas las light.* automaticamente.
+  # Opcional (se administra mejor desde el panel web en /home-assistant):
+  # si agregas luces aqui, solo se muestran las marcadas enabled=true.
+  # Si la dejas vacia, se muestran todas las light.* automaticamente.
   # entities:
-  #   - light.sala
-  #   - light.cuarto
+  #   - entity_id: light.sala
+  #     enabled: true
+  #   - entity_id: light.cuarto
+  #     enabled: false
 
 alexa:
   # Nombre exacto del servicio notify para tu Echo. Buscalo en HA:

@@ -22,41 +22,9 @@ def _headers():
 
 
 def list_lights():
-    base_url = _base_url()
-    if not base_url or not _token() or "REEMPLAZA" in _token():
-        raise HomeAssistantError("Configura home_assistant.base_url y token en config.yaml")
-
-    try:
-        response = requests.get(f"{base_url}/api/states", headers=_headers(), timeout=TIMEOUT)
-        response.raise_for_status()
-    except requests.RequestException as exc:
-        raise HomeAssistantError(str(exc)) from exc
-
-    # Si configuras home_assistant.entities, solo se muestran esas luces
-    # (en el orden que las listes). Si no, se muestran todas las que
-    # empiecen con "light." automaticamente.
-    allowed = config.get("home_assistant", "entities", default=None)
-
-    lights_by_id = {}
-    for entity in response.json():
-        entity_id = entity.get("entity_id", "")
-        if allowed:
-            if entity_id not in allowed:
-                continue
-        elif not entity_id.startswith("light."):
-            continue
-        name = entity.get("attributes", {}).get("friendly_name", entity_id)
-        lights_by_id[entity_id] = {"entity_id": entity_id, "name": name, "state": entity.get("state")}
-
-    if allowed:
-        return [lights_by_id[eid] for eid in allowed if eid in lights_by_id]
-    return list(lights_by_id.values())
-
-
-def list_all_lights():
-    """Todas las luces disponibles en HA, ignorando el filtro home_assistant.entities.
-
-    Se usa desde el panel web para elegir cuales mostrar (checkboxes).
+    """Lee home_assistant.entities: lista de {entity_id, enabled}, agregada a
+    mano desde el panel web. Si esta vacia/no configurada, muestra todas las
+    light.* automaticamente. Las marcadas enabled=false no se muestran.
     """
     base_url = _base_url()
     if not base_url or not _token() or "REEMPLAZA" in _token():
@@ -68,15 +36,25 @@ def list_all_lights():
     except requests.RequestException as exc:
         raise HomeAssistantError(str(exc)) from exc
 
-    lights = []
+    configured = config.get("home_assistant", "entities", default=None)
+    allowed_ids = None
+    if configured:
+        allowed_ids = [e["entity_id"] for e in configured if e.get("enabled", True)]
+
+    lights_by_id = {}
     for entity in response.json():
         entity_id = entity.get("entity_id", "")
-        if not entity_id.startswith("light."):
+        if allowed_ids is not None:
+            if entity_id not in allowed_ids:
+                continue
+        elif not entity_id.startswith("light."):
             continue
         name = entity.get("attributes", {}).get("friendly_name", entity_id)
-        lights.append({"entity_id": entity_id, "name": name})
+        lights_by_id[entity_id] = {"entity_id": entity_id, "name": name, "state": entity.get("state")}
 
-    return lights
+    if allowed_ids is not None:
+        return [lights_by_id[eid] for eid in allowed_ids if eid in lights_by_id]
+    return list(lights_by_id.values())
 
 
 def set_light(entity_id, turn_on):
