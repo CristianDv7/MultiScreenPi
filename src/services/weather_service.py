@@ -7,9 +7,14 @@ from core import config
 from core.spanish_dates import weekday_name
 
 TIMEOUT = 8
-CACHE_TTL = 900  # 15 minutos: evita gastar la cuota diaria de la API
+DEFAULT_CACHE_MINUTES = 15
 
 _cache = {"current": None, "current_at": 0.0, "forecast": None, "forecast_at": 0.0}
+
+
+def _cache_ttl():
+    minutes = config.get("weather", "cache_minutes", default=DEFAULT_CACHE_MINUTES)
+    return max(0, minutes) * 60
 
 
 class WeatherError(Exception):
@@ -33,7 +38,7 @@ def _check_config():
 
 def fetch_current(force=False):
     now = time.monotonic()
-    if not force and _cache["current"] and now - _cache["current_at"] < CACHE_TTL:
+    if not force and _cache["current"] and now - _cache["current_at"] < _cache_ttl():
         return _cache["current"]
 
     _check_config()
@@ -67,7 +72,7 @@ def fetch_current(force=False):
 def fetch_hourly_forecast(limit=8, force=False):
     """Pronostico en bloques de 3 horas (endpoint gratuito /forecast de OpenWeatherMap)."""
     now = time.monotonic()
-    if not force and _cache["forecast"] and now - _cache["forecast_at"] < CACHE_TTL:
+    if not force and _cache["forecast"] and now - _cache["forecast_at"] < _cache_ttl():
         return _cache["forecast"][:limit]
 
     _check_config()

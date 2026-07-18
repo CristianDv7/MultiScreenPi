@@ -51,6 +51,10 @@ cameras:
 weather:
   api_key: "REEMPLAZA_CON_TU_KEY"
   location: "Bogota,CO"
+  # Minutos que se reutiliza la respuesta antes de volver a consultar la API
+  # (compartido entre el reloj de reposo y la pantalla de Clima). Editable
+  # tambien desde el panel web, seccion Secretos.
+  cache_minutes: 15
 
 news:
   feeds:

@@ -496,6 +496,10 @@ def config_page():
     if request.method == "POST":
         config.set_value("weather", "api_key", value=request.form.get("weather_api_key", "").strip())
         config.set_value("weather", "location", value=request.form.get("weather_location", "").strip())
+        cache_minutes = request.form.get("weather_cache_minutes", "15")
+        config.set_value(
+            "weather", "cache_minutes", value=int(cache_minutes) if cache_minutes.isdigit() else 15
+        )
 
         config.set_value("home_assistant", "base_url", value=request.form.get("ha_base_url", "").strip())
         config.set_value("home_assistant", "token", value=request.form.get("ha_token", "").strip())
@@ -526,6 +530,7 @@ def config_page():
 
     weather_api_key = config.get("weather", "api_key", default="")
     weather_location = config.get("weather", "location", default="")
+    weather_cache_minutes = config.get("weather", "cache_minutes", default=15)
     ha_base_url = config.get("home_assistant", "base_url", default="")
     ha_token = config.get("home_assistant", "token", default="")
     alexa_notify = config.get("alexa", "notify_service", default="")
@@ -552,6 +557,8 @@ def config_page():
       <input name="weather_api_key" value="{weather_api_key}" placeholder="API key de OpenWeatherMap">
       <label class="field-label">Ciudad para el pronostico</label>
       <input name="weather_location" value="{weather_location}" placeholder="Ciudad,Pais (ej. Loja,EC)">
+      <label class="field-label">Minutos entre consultas a la API (menos peticiones = evitas la cuota diaria)</label>
+      <input name="weather_cache_minutes" value="{weather_cache_minutes}" placeholder="15">
 
       <h2>Home Assistant</h2>
       <label class="field-label">IP / URL de Home Assistant</label>

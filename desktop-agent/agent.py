@@ -36,19 +36,19 @@ EXAMPLE_CONFIG_PATH = Path(__file__).resolve().parent / "agent_config.example.js
 
 
 def _load_agent_config():
+    """Se lee de nuevo en cada peticion (el archivo es chico): asi puedes
+    agregar apps o cambiar el token en agent_config.json sin tener que
+    reiniciar el agente.
+    """
     path = CONFIG_PATH if CONFIG_PATH.exists() else EXAMPLE_CONFIG_PATH
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-_agent_config = _load_agent_config()
-TOKEN = _agent_config.get("token", "")
-APPS = _agent_config.get("apps", {})
-
-
 class Handler(http.server.BaseHTTPRequestHandler):
     def _authorized(self):
-        return self.headers.get("Authorization") == f"Bearer {TOKEN}"
+        token = _load_agent_config().get("token", "")
+        return self.headers.get("Authorization") == f"Bearer {token}"
 
     def _respond(self, status, message=""):
         self.send_response(status)
@@ -97,7 +97,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
         if self.path == "/launch":
             app = body.get("app", "")
-            command = APPS.get(app)
+            command = _load_agent_config().get("apps", {}).get(app)
             if not command:
                 self._respond(404, f"app '{app}' no configurada en agent_config.json")
                 return
@@ -133,7 +133,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    if not TOKEN or "REEMPLAZA" in TOKEN:
+    token = _load_agent_config().get("token", "")
+    if not token or "REEMPLAZA" in token:
         print(f"ADVERTENCIA: configura un token real en {CONFIG_PATH}")
     server = http.server.HTTPServer(("0.0.0.0", PORT), Handler)
     print(f"Agente de escritorio escuchando en el puerto {PORT}. Ctrl+C para salir.")
