@@ -543,39 +543,52 @@ def config_page():
     hourly_checked = "checked" if voice_hourly else ""
 
     body = f"""
+    <style>.field-label {{ font-size:0.85rem; color:#555; margin-top:12px; display:block; }}</style>
     <p>Si cambias la contrasena del panel al final de este formulario,
     el navegador te va a pedir que la ingreses de nuevo.</p>
     <form method="post">
-      <h2>Clima</h2>
-      <input type="password" name="weather_api_key" value="{weather_api_key}" placeholder="API key de OpenWeatherMap">
+      <h2>Clima (OpenWeatherMap)</h2>
+      <label class="field-label">Key de la API de clima</label>
+      <input name="weather_api_key" value="{weather_api_key}" placeholder="API key de OpenWeatherMap">
+      <label class="field-label">Ciudad para el pronostico</label>
       <input name="weather_location" value="{weather_location}" placeholder="Ciudad,Pais (ej. Loja,EC)">
 
       <h2>Home Assistant</h2>
+      <label class="field-label">IP / URL de Home Assistant</label>
       <input name="ha_base_url" value="{ha_base_url}" placeholder="http://homeassistant.local:8123">
-      <input type="password" name="ha_token" value="{ha_token}" placeholder="Token de larga duracion">
+      <label class="field-label">Token de acceso de larga duracion</label>
+      <input name="ha_token" value="{ha_token}" placeholder="Token de larga duracion">
 
       <h2>Alexa</h2>
+      <label class="field-label">Servicio notify de tu Echo (Alexa Media Player)</label>
       <input name="alexa_notify" value="{alexa_notify}" placeholder="notify.alexa_media_tu_echo">
 
       <h2>Mi PC</h2>
+      <label class="field-label">IP / URL del agente en tu PC</label>
       <input name="pc_base_url" value="{pc_base_url}" placeholder="http://IP_DE_TU_PC:5566">
-      <input type="password" name="pc_token" value="{pc_token}" placeholder="Token del agente">
+      <label class="field-label">Token del agente (debe coincidir con agent.py)</label>
+      <input name="pc_token" value="{pc_token}" placeholder="Token del agente">
 
       <h2>Voz</h2>
+      <label class="field-label">Donde se reproducen los anuncios y lecturas</label>
       <select name="voice_output">
         <option value="pi" {pi_selected}>Parlante de la Pi</option>
         <option value="alexa" {alexa_selected}>Alexa (via Home Assistant)</option>
       </select>
       <label><input type="checkbox" name="voice_hourly" {hourly_checked} style="width:auto;display:inline;">
         Anunciar la hora periodicamente</label>
+      <label class="field-label">Minutos entre cada anuncio de hora</label>
       <input name="voice_interval" value="{voice_interval}" placeholder="Minutos entre anuncios">
 
       <h2>Panel web</h2>
-      <input type="password" name="web_password" placeholder="Dejar en blanco para no cambiarla">
-      <input name="web_port" value="{web_port}" placeholder="Puerto (requiere reiniciar el servicio)">
+      <label class="field-label">Contrasena para entrar a este panel (usuario: admin)</label>
+      <input name="web_password" value="{web_password}" placeholder="Contrasena del panel">
+      <label class="field-label">Puerto del panel (requiere reiniciar el servicio para aplicar)</label>
+      <input name="web_port" value="{web_port}" placeholder="Puerto">
 
       <h2>Pantalla</h2>
-      <input name="screen_timeout" value="{screen_timeout}" placeholder="Segundos antes del reloj de reposo (0 = nunca)">
+      <label class="field-label">Segundos de inactividad antes del reloj de reposo (0 = nunca)</label>
+      <input name="screen_timeout" value="{screen_timeout}" placeholder="Segundos">
 
       <br><br>
       <button type="submit">Guardar todo</button>
