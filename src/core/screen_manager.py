@@ -14,6 +14,14 @@ class Screen:
     def on_scroll(self, dy):
         pass
 
+    def on_touch_event(self, kind, finger_id, pos):
+        """Evento crudo (down/move/up) de CADA dedo, sin filtrar por 'principal'.
+
+        Para gestos multitouch (pellizcar, panoramica). La mayoria de pantallas
+        no lo necesitan y usan on_tap/on_scroll en su lugar.
+        """
+        pass
+
     def update(self, dt):
         pass
 
@@ -59,6 +67,10 @@ class ScreenManager:
     def handle_scroll(self, dy):
         if self.current:
             self.current.on_scroll(dy)
+
+    def handle_touch_event(self, kind, finger_id, pos):
+        if self.current:
+            self.current.on_touch_event(kind, finger_id, pos)
 
     def update(self, dt):
         if self.current:

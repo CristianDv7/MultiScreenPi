@@ -40,6 +40,7 @@ class App:
         self._touch_start = None
         self._touch_last = None
         self._dragging = False
+        self._primary_finger = None
 
         self._announce_elapsed = 0.0
         self._health_elapsed = 0.0
@@ -74,12 +75,19 @@ class App:
             return pw - px, ph - py
         return px, py
 
-    def _handle_touch(self, kind, pos):
+    def _handle_touch(self, kind, pos, finger_id):
+        """Sistema de tap/scroll de un solo dedo (el que ya usan la mayoria de
+        pantallas). Si hay varios dedos a la vez, solo el primero que toco
+        ('principal') mueve este sistema; los demas se ignoran aqui, pero
+        igual se envian todos por separado via handle_touch_event.
+        """
         if kind == DOWN:
-            self._touch_start = pos
-            self._touch_last = pos
-            self._dragging = False
-        elif kind == MOVE and self._touch_last is not None:
+            if self._primary_finger is None:
+                self._primary_finger = finger_id
+                self._touch_start = pos
+                self._touch_last = pos
+                self._dragging = False
+        elif kind == MOVE and finger_id == self._primary_finger and self._touch_last is not None:
             dy = pos[1] - self._touch_last[1]
             if not self._dragging:
                 total_dx = pos[0] - self._touch_start[0]
@@ -89,12 +97,13 @@ class App:
             if self._dragging:
                 self.screens.handle_scroll(dy)
             self._touch_last = pos
-        elif kind == UP:
+        elif kind == UP and finger_id == self._primary_finger:
             if not self._dragging and self._touch_start is not None:
                 self.screens.handle_tap(self._touch_start)
             self._touch_start = None
             self._touch_last = None
             self._dragging = False
+            self._primary_finger = None
 
     def _maybe_announce_time(self, dt):
         if not config.get("voice", "hourly_announcement", default=True):
@@ -153,8 +162,10 @@ class App:
                     self.running = False
                     continue
 
-                kind, pos = normalize_event(event, self._transform_pos)
-                self._handle_touch(kind, pos)
+                kind, pos, finger_id = normalize_event(event, self._transform_pos)
+                if kind is not None:
+                    self._handle_touch(kind, pos, finger_id)
+                    self.screens.handle_touch_event(kind, finger_id, pos)
                 self.screens.handle_event(event)
 
             self._maybe_announce_time(dt)
