@@ -69,6 +69,7 @@ def _page(title, body):
   <a href="/shortcuts">Atajos PC</a>
   <a href="/home-assistant">Home Assistant</a>
   <a href="/images">Imagenes</a>
+  <a href="/config">Secretos</a>
 </nav>
 <hr>
 {body}
@@ -485,6 +486,88 @@ def images_delete(filename):
     if path.exists() and path.parent == SLIDESHOW_DIR:
         path.unlink()
     return redirect("/images")
+
+
+# --- Secretos / configuracion general ---
+
+
+@app.route("/config", methods=["GET", "POST"])
+def config_page():
+    if request.method == "POST":
+        config.set_value("weather", "api_key", value=request.form.get("weather_api_key", "").strip())
+        config.set_value("weather", "location", value=request.form.get("weather_location", "").strip())
+
+        config.set_value("home_assistant", "base_url", value=request.form.get("ha_base_url", "").strip())
+        config.set_value("home_assistant", "token", value=request.form.get("ha_token", "").strip())
+
+        config.set_value("alexa", "notify_service", value=request.form.get("alexa_notify", "").strip())
+
+        config.set_value("pc_control", "base_url", value=request.form.get("pc_base_url", "").strip())
+        config.set_value("pc_control", "token", value=request.form.get("pc_token", "").strip())
+
+        config.set_value("voice", "output", value=request.form.get("voice_output", "pi"))
+        config.set_value("voice", "hourly_announcement", value=request.form.get("voice_hourly") == "on")
+        interval = request.form.get("voice_interval", "60")
+        config.set_value("voice", "interval_minutes", value=int(interval) if interval.isdigit() else 60)
+
+        new_password = request.form.get("web_password", "").strip()
+        if new_password:
+            config.set_value("web", "password", value=new_password)
+
+        return redirect("/config")
+
+    weather_api_key = config.get("weather", "api_key", default="")
+    weather_location = config.get("weather", "location", default="")
+    ha_base_url = config.get("home_assistant", "base_url", default="")
+    ha_token = config.get("home_assistant", "token", default="")
+    alexa_notify = config.get("alexa", "notify_service", default="")
+    pc_base_url = config.get("pc_control", "base_url", default="")
+    pc_token = config.get("pc_control", "token", default="")
+    voice_output = config.get("voice", "output", default="pi")
+    voice_hourly = config.get("voice", "hourly_announcement", default=True)
+    voice_interval = config.get("voice", "interval_minutes", default=60)
+    web_password = config.get("web", "password", default="")
+
+    pi_selected = "selected" if voice_output == "pi" else ""
+    alexa_selected = "selected" if voice_output == "alexa" else ""
+    hourly_checked = "checked" if voice_hourly else ""
+
+    body = f"""
+    <p>Si cambias la contrasena del panel al final de este formulario,
+    el navegador te va a pedir que la ingreses de nuevo.</p>
+    <form method="post">
+      <h2>Clima</h2>
+      <input type="password" name="weather_api_key" value="{weather_api_key}" placeholder="API key de OpenWeatherMap">
+      <input name="weather_location" value="{weather_location}" placeholder="Ciudad,Pais (ej. Loja,EC)">
+
+      <h2>Home Assistant</h2>
+      <input name="ha_base_url" value="{ha_base_url}" placeholder="http://homeassistant.local:8123">
+      <input type="password" name="ha_token" value="{ha_token}" placeholder="Token de larga duracion">
+
+      <h2>Alexa</h2>
+      <input name="alexa_notify" value="{alexa_notify}" placeholder="notify.alexa_media_tu_echo">
+
+      <h2>Mi PC</h2>
+      <input name="pc_base_url" value="{pc_base_url}" placeholder="http://IP_DE_TU_PC:5566">
+      <input type="password" name="pc_token" value="{pc_token}" placeholder="Token del agente">
+
+      <h2>Voz</h2>
+      <select name="voice_output">
+        <option value="pi" {pi_selected}>Parlante de la Pi</option>
+        <option value="alexa" {alexa_selected}>Alexa (via Home Assistant)</option>
+      </select>
+      <label><input type="checkbox" name="voice_hourly" {hourly_checked} style="width:auto;display:inline;">
+        Anunciar la hora periodicamente</label>
+      <input name="voice_interval" value="{voice_interval}" placeholder="Minutos entre anuncios">
+
+      <h2>Panel web</h2>
+      <input type="password" name="web_password" placeholder="Dejar en blanco para no cambiarla">
+
+      <br><br>
+      <button type="submit">Guardar todo</button>
+    </form>
+    """
+    return _page("Secretos", body)
 
 
 def run_server():

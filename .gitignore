@@ -4,3 +4,7 @@ __pycache__/
 venv/
 config/config.yaml
 .env
+
+# Fotos del slideshow: se cargan desde el panel web, no van al repo.
+assets/slideshow/*
+!assets/slideshow/LEEME.txt
