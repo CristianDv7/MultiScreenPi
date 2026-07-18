@@ -7,17 +7,25 @@ import requests
 
 from services import home_assistant_service
 
-MAX_SIZE = (552, 600)
+# Tope de resolucion que se guarda en memoria (no el tamano en pantalla):
+# mas grande que el area visible normal a proposito, para que el zoom
+# muestre detalle real en vez de solo agrandar un recorte pequeno.
+MAX_SIZE = (1280, 960)
 HA_POLL_INTERVAL = 1.5
 MJPEG_TIMEOUT = 8
 BUFFER_SAFETY_LIMIT = 3_000_000
 
 
 class CameraSource:
-    """Interfaz comun: corre en un hilo aparte, expone .surface con el ultimo frame decodificado."""
+    """Interfaz comun: corre en un hilo aparte, expone .surface con el ultimo frame decodificado.
+
+    .version sube cada vez que llega un frame nuevo, para que quien dibuje
+    pueda cachear el escalado y no recalcularlo en cada cuadro.
+    """
 
     def __init__(self):
         self.surface = None
+        self.version = 0
         self.error = None
         self.running = False
         self._thread = None
@@ -45,6 +53,7 @@ class CameraSource:
             if scale < 1:
                 image = pygame.transform.smoothscale(image, (int(w * scale), int(h * scale)))
             self.surface = image
+            self.version += 1
         except (pygame.error, OSError):
             pass
 

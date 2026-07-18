@@ -19,9 +19,14 @@ class CamerasScreen(Screen):
         self.buttons = []
         self.tab_buttons = []
         self.image_top = 200
+        self.zoomed = False
+        self._fit_cache_version = None
+        self._fit_cache_surface = None
+        self._image_rect = None
 
     def on_enter(self):
         self.buttons = [back_button(24, 24, self._go_back)]
+        self.zoomed = False
         self._build_tabs()
         self._select(0)
 
@@ -64,6 +69,7 @@ class CamerasScreen(Screen):
 
     def _make_selector(self, index):
         def select():
+            self.zoomed = False
             self._select(index)
 
         return select
@@ -74,6 +80,7 @@ class CamerasScreen(Screen):
         if self.source:
             self.source.stop()
         self.active_index = index
+        self._fit_cache_version = None
         self._build_tabs()
         try:
             self.source = camera_service.create_source(self.cameras[index])
@@ -83,9 +90,16 @@ class CamerasScreen(Screen):
             self._error = str(exc)
 
     def on_tap(self, pos):
+        if self.zoomed:
+            self.zoomed = False
+            return
+
         for button in self.buttons + self.tab_buttons:
             if button.handle_tap(pos):
                 return
+
+        if self._image_rect and self._image_rect.collidepoint(pos) and self.source and self.source.surface:
+            self.zoomed = True
 
     def draw(self, surface):
         surface.fill(theme.BG)
@@ -97,6 +111,10 @@ class CamerasScreen(Screen):
             surface.blit(
                 theme.FONT_BODY.render("Configura 'cameras' en config.yaml", True, theme.TEXT_MUTED), (24, 160)
             )
+            return
+
+        if self.zoomed and self.source and self.source.surface:
+            self._draw_zoomed(surface, w, h)
             return
 
         current = self.cameras[self.active_index]
@@ -113,6 +131,7 @@ class CamerasScreen(Screen):
         image_area = pygame.Rect(24, self.image_top, w - 48, h - self.image_top - 20)
         pygame.draw.rect(surface, theme.SURFACE, image_area, border_radius=20)
         pygame.draw.rect(surface, theme.GOLD, image_area, width=3, border_radius=20)
+        self._image_rect = image_area
 
         if self.source and self.source.error:
             text = f"Error: {self.source.error}"
@@ -121,7 +140,7 @@ class CamerasScreen(Screen):
                 (image_area.left + 20, image_area.top + 20),
             )
         elif self.source and self.source.surface:
-            img = self.source.surface
+            img = self._fitted_surface(image_area.size)
             surface.blit(img, img.get_rect(center=image_area.center))
 
             badge_text = "EN VIVO" if current.get("type") == "mjpeg" else "FOTO"
@@ -131,8 +150,36 @@ class CamerasScreen(Screen):
             badge_rect.topleft = (image_area.left + 16, image_area.top + 16)
             pygame.draw.rect(surface, badge_color, badge_rect.inflate(20, 12), border_radius=10)
             surface.blit(badge_surf, badge_rect)
+
+            hint_surf = theme.FONT_SMALL.render("Toca la imagen para ampliar", True, theme.TEXT_MUTED)
+            surface.blit(hint_surf, (image_area.left, image_area.bottom + 6))
         else:
             surface.blit(
                 theme.FONT_BODY.render("Conectando...", True, theme.TEXT_MUTED),
                 (image_area.left + 20, image_area.top + 20),
             )
+
+    def _fitted_surface(self, size):
+        """Escala el frame actual para que quepa en `size`, cacheado por version
+        del frame para no recalcular el escalado en cada cuadro (30 veces/seg).
+        """
+        cache_key = (self.source.version, size)
+        if self._fit_cache_version != cache_key:
+            src = self.source.surface
+            sw, sh = src.get_size()
+            max_w, max_h = size
+            scale = min(max_w / sw, max_h / sh)
+            new_size = (max(1, int(sw * scale)), max(1, int(sh * scale)))
+            self._fit_cache_surface = pygame.transform.smoothscale(src, new_size)
+            self._fit_cache_version = cache_key
+        return self._fit_cache_surface
+
+    def _draw_zoomed(self, surface, w, h):
+        img = self._fitted_surface((w, h))
+        surface.blit(img, img.get_rect(center=(w // 2, h // 2)))
+
+        hint_surf = theme.FONT_SMALL.render("Toca para volver", True, (255, 255, 255))
+        hint_rect = hint_surf.get_rect()
+        hint_rect.bottomright = (w - 16, h - 16)
+        pygame.draw.rect(surface, (0, 0, 0), hint_rect.inflate(20, 12), border_radius=10)
+        surface.blit(hint_surf, hint_rect)
