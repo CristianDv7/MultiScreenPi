@@ -39,7 +39,13 @@ def list_lights():
     configured = config.get("home_assistant", "entities", default=None)
     allowed_ids = None
     if configured:
-        allowed_ids = [e["entity_id"] for e in configured if e.get("enabled", True)]
+        # Soporta el formato viejo (lista simple de entity_id como texto) y
+        # el nuevo (lista de {entity_id, enabled}) agregado desde el panel web.
+        allowed_ids = [
+            item if isinstance(item, str) else item.get("entity_id")
+            for item in configured
+            if isinstance(item, str) or item.get("enabled", True)
+        ]
 
     lights_by_id = {}
     for entity in response.json():

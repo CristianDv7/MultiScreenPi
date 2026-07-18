@@ -343,9 +343,15 @@ def shortcuts_delete(index):
 # --- Home Assistant: agregar luces a mano y activar/desactivar ---
 
 
+def _load_entities():
+    """Normaliza el formato viejo (lista simple de entity_id) al nuevo (con enabled)."""
+    raw = config.get("home_assistant", "entities", default=[]) or []
+    return [{"entity_id": e, "enabled": True} if isinstance(e, str) else e for e in raw]
+
+
 @app.route("/home-assistant", methods=["GET", "POST"])
 def home_assistant():
-    entities = config.get("home_assistant", "entities", default=[]) or []
+    entities = _load_entities()
 
     if request.method == "POST":
         entity_id = request.form.get("entity_id", "").strip()
@@ -390,7 +396,7 @@ def home_assistant():
 
 @app.route("/home-assistant/edit/<int:index>", methods=["GET", "POST"])
 def home_assistant_edit(index):
-    entities = config.get("home_assistant", "entities", default=[]) or []
+    entities = _load_entities()
     if not (0 <= index < len(entities)):
         return redirect("/home-assistant")
 
@@ -411,7 +417,7 @@ def home_assistant_edit(index):
 
 @app.route("/home-assistant/toggle/<int:index>", methods=["POST"])
 def home_assistant_toggle(index):
-    entities = config.get("home_assistant", "entities", default=[]) or []
+    entities = _load_entities()
     if 0 <= index < len(entities):
         entities[index]["enabled"] = not entities[index].get("enabled", True)
         config.set_value("home_assistant", "entities", value=entities)
@@ -420,7 +426,7 @@ def home_assistant_toggle(index):
 
 @app.route("/home-assistant/delete/<int:index>", methods=["POST"])
 def home_assistant_delete(index):
-    entities = config.get("home_assistant", "entities", default=[]) or []
+    entities = _load_entities()
     if 0 <= index < len(entities):
         entities.pop(index)
         config.set_value("home_assistant", "entities", value=entities)
