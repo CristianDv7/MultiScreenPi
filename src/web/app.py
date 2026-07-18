@@ -442,11 +442,11 @@ def images():
     SLIDESHOW_DIR.mkdir(parents=True, exist_ok=True)
 
     if request.method == "POST":
-        file = request.files.get("photo")
-        if file and file.filename:
-            filename = secure_filename(file.filename)
-            if Path(filename).suffix.lower() in ALLOWED_IMAGE_EXTS:
-                file.save(SLIDESHOW_DIR / filename)
+        for file in request.files.getlist("photo"):
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                if Path(filename).suffix.lower() in ALLOWED_IMAGE_EXTS:
+                    file.save(SLIDESHOW_DIR / filename)
         return redirect("/images")
 
     files = sorted(p.name for p in SLIDESHOW_DIR.iterdir() if p.suffix.lower() in ALLOWED_IMAGE_EXTS)
@@ -465,9 +465,9 @@ def images():
     body = (
         gallery
         + """
-    <h2>Subir foto</h2>
+    <h2>Subir fotos</h2>
     <form method="post" enctype="multipart/form-data">
-      <input type="file" name="photo" accept="image/*" required>
+      <input type="file" name="photo" accept="image/*" multiple required>
       <button type="submit">Subir</button>
     </form>
     """
