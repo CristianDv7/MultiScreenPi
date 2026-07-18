@@ -49,11 +49,11 @@ class MainMenuScreen(Screen):
         self._weather_elapsed = WEATHER_REFRESH_SECONDS  # fuerza una carga inicial
 
         self._slideshow_paths = []
-        self._slideshow_scanned = False
         self._slideshow_index = 0
         self._slideshow_elapsed = 0.0
         self._slideshow_surface = None
         self._slideshow_loading = False
+        self._was_blanked = False
 
     def on_enter(self):
         self.buttons = []
@@ -105,6 +105,17 @@ class MainMenuScreen(Screen):
             self._weather_loading = True
             threading.Thread(target=self._fetch_weather, daemon=True).start()
 
+        if self.blanked and not self._was_blanked:
+            # Al entrar de nuevo en reposo, reescanea la carpeta por si se
+            # agregaron o quitaron fotos desde el panel web mientras tanto.
+            self._slideshow_paths = self._scan_slideshow_images()
+            self._slideshow_index = 0
+            self._slideshow_elapsed = 0.0
+            self._slideshow_surface = None
+            if self._slideshow_paths:
+                self._load_slideshow_image()
+        self._was_blanked = self.blanked
+
         if self.blanked:
             self._update_slideshow(dt)
 
@@ -117,13 +128,6 @@ class MainMenuScreen(Screen):
             self._weather_loading = False
 
     def _update_slideshow(self, dt):
-        if not self._slideshow_scanned:
-            self._slideshow_scanned = True
-            self._slideshow_paths = self._scan_slideshow_images()
-            if self._slideshow_paths:
-                self._load_slideshow_image()
-            return
-
         if not self._slideshow_paths:
             return
 

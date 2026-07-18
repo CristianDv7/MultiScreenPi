@@ -53,6 +53,32 @@ def list_lights():
     return list(lights_by_id.values())
 
 
+def list_all_lights():
+    """Todas las luces disponibles en HA, ignorando el filtro home_assistant.entities.
+
+    Se usa desde el panel web para elegir cuales mostrar (checkboxes).
+    """
+    base_url = _base_url()
+    if not base_url or not _token() or "REEMPLAZA" in _token():
+        raise HomeAssistantError("Configura home_assistant.base_url y token en config.yaml")
+
+    try:
+        response = requests.get(f"{base_url}/api/states", headers=_headers(), timeout=TIMEOUT)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise HomeAssistantError(str(exc)) from exc
+
+    lights = []
+    for entity in response.json():
+        entity_id = entity.get("entity_id", "")
+        if not entity_id.startswith("light."):
+            continue
+        name = entity.get("attributes", {}).get("friendly_name", entity_id)
+        lights.append({"entity_id": entity_id, "name": name})
+
+    return lights
+
+
 def set_light(entity_id, turn_on):
     base_url = _base_url()
     service = "turn_on" if turn_on else "turn_off"

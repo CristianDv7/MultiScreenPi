@@ -3,6 +3,5 @@
 # traer un SDL2 propio sin ese driver y falla al abrir la pantalla.
 PyYAML>=6.0
 requests>=2.31
-python-dotenv>=1.0
-supabase>=2.0
 gTTS>=2.5
+Flask>=3.0

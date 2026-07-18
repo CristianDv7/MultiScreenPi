@@ -59,6 +59,13 @@ news:
 wifi:
   interface: "wlan0"
 
+web:
+  # Panel web local para administrar noticias, camaras, atajos de PC, luces
+  # visibles e imagenes del slideshow desde tu telefono/PC (http://IP_DE_LA_PI:puerto).
+  # Si dejas el password vacio o con REEMPLAZA, el servidor web no arranca.
+  password: "REEMPLAZA_CON_UNA_CONTRASENA"
+  port: 8080
+
 pc_control:
   # URL del agente de escritorio (ver desktop-agent/agent.py), corriendo en tu PC.
   base_url: "http://IP_DE_TU_PC:5566"

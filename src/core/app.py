@@ -45,6 +45,17 @@ class App:
         self._health_elapsed = 0.0
         self._overheat_warned = False
 
+        self._start_web_server()
+
+    def _start_web_server(self):
+        password = config.get("web", "password", default="")
+        if not password or "REEMPLAZA" in password:
+            print("Servidor web no iniciado: configura web.password en config.yaml")
+            return
+        from web.app import run_server
+
+        threading.Thread(target=run_server, daemon=True).start()
+
     def _physical_size(self):
         lw, lh = self.logical_size
         if self.rotate in (90, 270):

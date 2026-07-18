@@ -19,12 +19,12 @@ class SettingsScreen(Screen):
         self.screen_manager = screen_manager
         self.values = {}
         self.field_meta = {}
-        self.feeds = []
         self.active_field = None
         self.touched_fields = set()
         self.show_password = False
         self.status = None
         self.ip_address = None
+        self.web_url = None
         self.buttons = []
         self._dynamic_buttons = []
         self.field_rects = {}
@@ -44,29 +44,28 @@ class SettingsScreen(Screen):
         ]
 
     def _load_values(self):
-        self.feeds = config.get("news", "feeds", default=[]) or []
-
         self.values = {
             "ssid": "",
             "password": "",
             "timeout": str(config.get("display", "screen_timeout_seconds", default=60)),
-            "ha_base_url": config.get("home_assistant", "base_url", default="") or "",
         }
         self.field_meta = {
             "ssid": {"label": "SSID", "mask": False},
             "password": {"label": "Contrasena", "mask": True},
             "timeout": {"label": "60", "mask": False, "numeric": True},
-            "ha_base_url": {"label": "http://homeassistant.local:8123", "mask": False},
         }
-
-        for i, feed in enumerate(self.feeds):
-            key = f"feed_{i}_url"
-            self.values[key] = feed.get("url", "")
-            self.field_meta[key] = {"label": feed.get("name", f"Feed {i + 1}"), "mask": False}
 
         current_ssid = wifi_service.get_current_ssid()
         self.status = f"Conectado a: {current_ssid}" if current_ssid else "Sin conexion WiFi detectada"
         self.ip_address = system_service.get_local_ip()
+
+        web_password = config.get("web", "password", default="")
+        if self.ip_address and web_password and "REEMPLAZA" not in web_password:
+            port = config.get("web", "port", default=8080)
+            self.web_url = f"http://{self.ip_address}:{port}"
+        else:
+            self.web_url = None
+
         self.active_field = None
         self.touched_fields = set()
 
@@ -90,26 +89,22 @@ class SettingsScreen(Screen):
         config.set_value("display", "screen_timeout_seconds", value=seconds)
         self.status = f"Tiempo de pantalla guardado: {seconds}s (0 = nunca)"
 
-    def _save_ha(self):
-        url = self.values.get("ha_base_url", "").strip()
-        if not url:
-            self.status = "La URL de Home Assistant no puede estar vacia"
-            return
-        config.set_value("home_assistant", "base_url", value=url)
-        self.status = "URL de Home Assistant guardada"
-
-    def _save_feeds(self):
-        feeds = []
-        for i, feed in enumerate(self.feeds):
-            key = f"feed_{i}_url"
-            feeds.append({"name": feed.get("name", f"Feed {i + 1}"), "url": self.values.get(key, "").strip()})
-        config.set_value("news", "feeds", value=feeds)
-        self.status = "URLs de noticias guardadas"
-
     def _layout_rows(self):
         ip_text = f"IP: {self.ip_address}" if self.ip_address else "IP: no disponible"
         rows = [
             ("text", ip_text),
+        ]
+        if self.web_url:
+            rows.append(("text", f"Panel web: {self.web_url}"))
+        else:
+            rows.append(
+                (
+                    "text",
+                    "Panel web desactivado (configura web.password en config.yaml para activarlo)",
+                )
+            )
+        rows += [
+            ("gap",),
             ("label", "WiFi"),
             ("field", "ssid"),
             ("field", "password"),
@@ -119,17 +114,7 @@ class SettingsScreen(Screen):
             ("label", "Tiempo de pantalla (segundos, 0 = nunca)"),
             ("field", "timeout"),
             ("button", "Guardar tiempo de pantalla", self._save_timeout),
-            ("gap",),
-            ("label", "Home Assistant (URL)"),
-            ("field", "ha_base_url"),
-            ("button", "Guardar Home Assistant", self._save_ha),
-            ("gap",),
-            ("label", "Noticias (URL de cada feed)"),
         ]
-        for i in range(len(self.feeds)):
-            rows.append(("field", f"feed_{i}_url"))
-        if self.feeds:
-            rows.append(("button", "Guardar noticias", self._save_feeds))
         return rows
 
     def on_tap(self, pos):
@@ -200,11 +185,11 @@ class SettingsScreen(Screen):
                 if text:
                     for line in _wrap(text, theme.FONT_SMALL, w - 48):
                         surface.blit(theme.FONT_SMALL.render(line, True, theme.TEXT_MUTED), (24, y))
-                        y += 24
+                        y += 26
                 y += 6
             elif kind == "label":
                 surface.blit(theme.FONT_SMALL.render(row[1], True, theme.TEXT_MUTED), (24, y))
-                y += 30
+                y += 32
             elif kind == "field":
                 key = row[1]
                 rect = pygame.Rect(24, y, w - 48, FIELD_HEIGHT)

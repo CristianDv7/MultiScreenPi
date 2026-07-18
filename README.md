@@ -37,10 +37,28 @@ control remoto de PC y más, con anuncios por voz vía Alexa.
    sudo systemctl enable --now multiscreenpi.service
    ```
 
+## Panel web de administración
+
+Además de la pantalla táctil, hay un panel web (`http://IP_DE_LA_PI:8080`)
+para administrar noticias, cámaras, atajos de PC, qué luces de Home
+Assistant se muestran, y las fotos del slideshow — más cómodo que editar
+`config.yaml` a mano por SSH cuando es una lista larga o subir imágenes.
+
+Para activarlo, pon una contraseña en `config.yaml`:
+```yaml
+web:
+  password: "tu_contrasena"
+  port: 8080
+```
+Arranca solo (en un hilo dentro de la misma app) la próxima vez que
+reinicies el servicio. Usuario `admin`, la contraseña que hayas puesto.
+Los cambios se reflejan de inmediato en el panel, sin reiniciar nada.
+
 ## Estructura
 
 - `src/` — código de la app (Python + pygame)
+- `src/web/` — panel web de administración (Flask)
 - `config/config.example.yaml` — plantilla de configuración sin secretos
 - `scripts/` — instalador y unit de systemd
 - `desktop-agent/` — agente que corre en tu PC de escritorio para la sección "Mi PC" (abrir apps/sitios, cambiar audio, escritorios virtuales)
-- `assets/slideshow/` — pon aquí fotos para el slideshow del reloj de reposo
+- `assets/slideshow/` — pon aquí fotos para el slideshow del reloj de reposo (o súbelas desde el panel web)
