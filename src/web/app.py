@@ -514,6 +514,14 @@ def config_page():
         if new_password:
             config.set_value("web", "password", value=new_password)
 
+        web_port = request.form.get("web_port", "8080")
+        config.set_value("web", "port", value=int(web_port) if web_port.isdigit() else 8080)
+
+        timeout = request.form.get("screen_timeout", "60")
+        config.set_value(
+            "display", "screen_timeout_seconds", value=int(timeout) if timeout.isdigit() else 60
+        )
+
         return redirect("/config")
 
     weather_api_key = config.get("weather", "api_key", default="")
@@ -527,6 +535,8 @@ def config_page():
     voice_hourly = config.get("voice", "hourly_announcement", default=True)
     voice_interval = config.get("voice", "interval_minutes", default=60)
     web_password = config.get("web", "password", default="")
+    web_port = config.get("web", "port", default=8080)
+    screen_timeout = config.get("display", "screen_timeout_seconds", default=60)
 
     pi_selected = "selected" if voice_output == "pi" else ""
     alexa_selected = "selected" if voice_output == "alexa" else ""
@@ -562,6 +572,10 @@ def config_page():
 
       <h2>Panel web</h2>
       <input type="password" name="web_password" placeholder="Dejar en blanco para no cambiarla">
+      <input name="web_port" value="{web_port}" placeholder="Puerto (requiere reiniciar el servicio)">
+
+      <h2>Pantalla</h2>
+      <input name="screen_timeout" value="{screen_timeout}" placeholder="Segundos antes del reloj de reposo (0 = nunca)">
 
       <br><br>
       <button type="submit">Guardar todo</button>
