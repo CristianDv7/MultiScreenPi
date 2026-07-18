@@ -1,0 +1,8 @@
+Pon aqui tus imagenes (.jpg, .jpeg o .png) para el slideshow del reloj de reposo.
+
+Se muestran en orden alfabetico y rotan cada 10 segundos mientras la
+pantalla principal esta inactiva. Si esta carpeta esta vacia, simplemente
+no se muestra ninguna imagen (el reloj y el clima siguen funcionando igual).
+
+Nota: las fotos no van al repo de git (ver .gitignore), se cargan directo
+en la Pi desde el panel web (/images).
