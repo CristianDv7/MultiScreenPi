@@ -4,6 +4,7 @@ __pycache__/
 venv/
 config/config.yaml
 .env
+desktop-agent/agent_config.json
 
 # Fotos del slideshow: se cargan desde el panel web, no van al repo.
 assets/slideshow/*

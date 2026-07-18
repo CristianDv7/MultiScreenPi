@@ -54,6 +54,22 @@ Arranca solo (en un hilo dentro de la misma app) la próxima vez que
 reinicies el servicio. Usuario `admin`, la contraseña que hayas puesto.
 Los cambios se reflejan de inmediato en el panel, sin reiniciar nada.
 
+## Agente de escritorio (para la sección "Mi PC")
+
+Corre en tu PC de escritorio (Windows) para que el panel pueda abrir sitios
+web/apps, cambiar el audio, y moverte entre escritorios virtuales.
+
+1. En `desktop-agent/`, corre el instalador:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File install.ps1
+   ```
+   Instala las dependencias (`pycaw`, `comtypes`), crea `agent_config.json`
+   a partir del ejemplo, y configura el autoarranque con Windows.
+2. Edita `agent_config.json` con un token secreto y las rutas de tus apps
+   (`.exe` o `.lnk`) — este archivo nunca se sube a git.
+3. Copia esa URL (`http://IP_DE_TU_PC:5566`) y el token al panel web de la
+   Pi, sección **Secretos > Mi PC**.
+
 ## Estructura
 
 - `src/` — código de la app (Python + pygame)

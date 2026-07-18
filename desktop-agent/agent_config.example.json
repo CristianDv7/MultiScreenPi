@@ -1,0 +1,6 @@
+{
+  "token": "REEMPLAZA_CON_UN_TOKEN_SECRETO",
+  "apps": {
+    "nombre_del_atajo": "C:\\ruta\\a\\tu\\App.exe o .lnk"
+  }
+}

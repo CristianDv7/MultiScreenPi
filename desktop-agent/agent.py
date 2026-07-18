@@ -4,18 +4,16 @@ Corre este script en tu PC (misma red que la Raspberry Pi) para que el
 panel pueda abrir sitios web, lanzar apps, y cambiar el dispositivo de
 salida de audio aqui.
 
-Dependencias (solo para el cambio de audio, todo lo demas es libreria
-estandar): pip install pycaw comtypes
+Instalacion facil: corre install.ps1 en PowerShell (instala dependencias,
+crea agent_config.json desde el ejemplo, y configura el autoarranque).
 
-Uso:
+Uso manual:
     python agent.py
 
-Autoarranque con Windows: copia start_agent.vbs a tu carpeta de Inicio
-(shell:startup) para que se ejecute solo al iniciar sesion, sin ventana
-de consola.
-
-Configura TOKEN y APPS abajo, y copia esa misma URL/token en
-config/config.yaml del panel, seccion "pc_control".
+El token y las apps disponibles se leen de agent_config.json (se crea a
+partir de agent_config.example.json la primera vez que corres install.ps1).
+Copia esa misma URL/token en config/config.yaml del panel (o en la
+seccion "Secretos" del panel web), apartado "pc_control".
 
 Seguridad: este servidor escucha en todas las interfaces de red (0.0.0.0)
 y ejecuta lo que le pidan sin mas verificacion que el token. Es aceptable
@@ -27,18 +25,25 @@ import http.server
 import json
 import os
 import webbrowser
+from pathlib import Path
 
 import audio
 import desktop_switch
 
 PORT = 5566
-TOKEN = "eldv71998"
+CONFIG_PATH = Path(__file__).resolve().parent / "agent_config.json"
+EXAMPLE_CONFIG_PATH = Path(__file__).resolve().parent / "agent_config.example.json"
 
-# Nombre -> ruta a la app o acceso directo (.exe o .lnk). os.startfile la abre
-# igual que si le dieras doble clic, asi que los .lnk funcionan sin problema.
-APPS = {
-    "android_studio": r"C:\Users\chris\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\JetBrains Toolbox\Android Studio.lnk",
-}
+
+def _load_agent_config():
+    path = CONFIG_PATH if CONFIG_PATH.exists() else EXAMPLE_CONFIG_PATH
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+_agent_config = _load_agent_config()
+TOKEN = _agent_config.get("token", "")
+APPS = _agent_config.get("apps", {})
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -94,7 +99,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             app = body.get("app", "")
             command = APPS.get(app)
             if not command:
-                self._respond(404, f"app '{app}' no configurada en APPS")
+                self._respond(404, f"app '{app}' no configurada en agent_config.json")
                 return
             os.startfile(command)
             self._respond(200, "ok")
@@ -128,6 +133,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    if not TOKEN or "REEMPLAZA" in TOKEN:
+        print(f"ADVERTENCIA: configura un token real en {CONFIG_PATH}")
     server = http.server.HTTPServer(("0.0.0.0", PORT), Handler)
     print(f"Agente de escritorio escuchando en el puerto {PORT}. Ctrl+C para salir.")
     server.serve_forever()
