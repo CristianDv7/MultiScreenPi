@@ -10,6 +10,9 @@ display:
   # Segundos de inactividad en la pantalla principal antes de poner el reloj
   # de reposo. 0 = nunca. Se puede cambiar desde Ajustes sin editar este archivo.
   screen_timeout_seconds: 60
+  # Oscurece por software toda la interfaz. 0 = sin filtro; 85 = máximo.
+  # No cambia el consumo ni la retroiluminación física del LCD.
+  visual_dim_percent: 0
 
 voice:
   # "pi" = gTTS + parlante conectado a la Pi. "alexa" = usa un Echo via

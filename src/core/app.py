@@ -32,6 +32,8 @@ class App:
         pygame.mouse.set_visible(False)
 
         self.logical_surface = pygame.Surface(self.logical_size)
+        self._dim_overlay = None
+        self._dim_percent = None
 
         self.clock = pygame.time.Clock()
         self.screens = ScreenManager()
@@ -151,6 +153,23 @@ class App:
             rotated = pygame.transform.rotate(self.logical_surface, -self.rotate)
             self.display_surface.blit(rotated, (0, 0))
 
+    def _apply_visual_dim(self):
+        """Oscurece la interfaz sin modificar la retroiluminación física del LCD."""
+        percent = config.get("display", "visual_dim_percent", default=0)
+        try:
+            percent = max(0, min(85, int(percent)))
+        except (TypeError, ValueError):
+            percent = 0
+
+        if percent <= 0:
+            return
+        if percent != self._dim_percent:
+            alpha = round(255 * percent / 100)
+            self._dim_overlay = pygame.Surface(self.logical_size, pygame.SRCALPHA)
+            self._dim_overlay.fill((0, 0, 0, alpha))
+            self._dim_percent = percent
+        self.logical_surface.blit(self._dim_overlay, (0, 0))
+
     def run(self):
         while self.running:
             dt = self.clock.tick(self.fps) / 1000.0
@@ -173,6 +192,7 @@ class App:
 
             self.screens.update(dt)
             self.screens.draw(self.logical_surface)
+            self._apply_visual_dim()
             self._present()
             pygame.display.flip()
 

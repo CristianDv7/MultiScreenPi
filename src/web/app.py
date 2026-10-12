@@ -540,6 +540,9 @@ def config_page():
         config.set_value(
             "display", "screen_timeout_seconds", value=int(timeout) if timeout.isdigit() else 60
         )
+        visual_dim = request.form.get("visual_dim", "0")
+        visual_dim_value = int(visual_dim) if visual_dim.isdigit() else 0
+        config.set_value("display", "visual_dim_percent", value=max(0, min(85, visual_dim_value)))
 
         return redirect("/config")
 
@@ -557,6 +560,7 @@ def config_page():
     web_password = config.get("web", "password", default="")
     web_port = config.get("web", "port", default=8080)
     screen_timeout = config.get("display", "screen_timeout_seconds", default=60)
+    visual_dim = config.get("display", "visual_dim_percent", default=0)
 
     pi_selected = "selected" if voice_output == "pi" else ""
     alexa_selected = "selected" if voice_output == "alexa" else ""
@@ -611,6 +615,8 @@ def config_page():
       <h2>Pantalla</h2>
       <label class="field-label">Segundos de inactividad antes del reloj de reposo (0 = nunca)</label>
       <input name="screen_timeout" value="{screen_timeout}" placeholder="Segundos">
+      <label class="field-label">Filtro visual de brillo (0-85%; oscurece la imagen, no modifica el backlight físico)</label>
+      <input name="visual_dim" value="{visual_dim}" placeholder="0">
 
       <br><br>
       <button type="submit">Guardar todo</button>

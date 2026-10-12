@@ -48,11 +48,13 @@ class SettingsScreen(Screen):
             "ssid": "",
             "password": "",
             "timeout": str(config.get("display", "screen_timeout_seconds", default=60)),
+            "visual_dim": str(config.get("display", "visual_dim_percent", default=0)),
         }
         self.field_meta = {
             "ssid": {"label": "SSID", "mask": False},
             "password": {"label": "Contrasena", "mask": True},
             "timeout": {"label": "60", "mask": False, "numeric": True},
+            "visual_dim": {"label": "0", "mask": False, "numeric": True},
         }
 
         current_ssid = wifi_service.get_current_ssid()
@@ -89,6 +91,15 @@ class SettingsScreen(Screen):
         config.set_value("display", "screen_timeout_seconds", value=seconds)
         self.status = f"Tiempo de pantalla guardado: {seconds}s (0 = nunca)"
 
+    def _save_visual_dim(self):
+        value = self.values.get("visual_dim", "")
+        if not value.isdigit() or not 0 <= int(value) <= 85:
+            self.status = "El filtro visual debe estar entre 0 y 85"
+            return
+        percent = int(value)
+        config.set_value("display", "visual_dim_percent", value=percent)
+        self.status = f"Filtro visual guardado: {percent}% (0 = sin filtro)"
+
     def _layout_rows(self):
         ip_text = f"IP: {self.ip_address}" if self.ip_address else "IP: no disponible"
         rows = [
@@ -114,6 +125,10 @@ class SettingsScreen(Screen):
             ("label", "Tiempo de pantalla (segundos, 0 = nunca)"),
             ("field", "timeout"),
             ("button", "Guardar tiempo de pantalla", self._save_timeout),
+            ("gap",),
+            ("label", "Filtro visual de brillo (0-85%, no cambia el hardware)"),
+            ("field", "visual_dim"),
+            ("button", "Guardar filtro visual", self._save_visual_dim),
         ]
         return rows
 
