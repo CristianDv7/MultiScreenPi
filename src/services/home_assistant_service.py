@@ -22,7 +22,7 @@ def _headers():
 
 
 def list_lights():
-    """Lee home_assistant.entities: lista de {entity_id, enabled}, agregada a
+    """Lee home_assistant.entities: lista de {entity_id, enabled, momentary}, agregada a
     mano desde el panel web. Si esta vacia/no configurada, muestra todas las
     light.* automaticamente. Las marcadas enabled=false no se muestran.
     """
@@ -38,14 +38,19 @@ def list_lights():
 
     configured = config.get("home_assistant", "entities", default=None)
     allowed_ids = None
+    config_by_id = {}
     if configured:
         # Soporta el formato viejo (lista simple de entity_id como texto) y
         # el nuevo (lista de {entity_id, enabled}) agregado desde el panel web.
-        allowed_ids = [
-            item if isinstance(item, str) else item.get("entity_id")
-            for item in configured
-            if isinstance(item, str) or item.get("enabled", True)
-        ]
+        allowed_ids = []
+        for item in configured:
+            if isinstance(item, str):
+                config_by_id[item] = {}
+                allowed_ids.append(item)
+            elif item.get("enabled", True) and item.get("entity_id"):
+                entity_id = item["entity_id"]
+                config_by_id[entity_id] = item
+                allowed_ids.append(entity_id)
 
     lights_by_id = {}
     for entity in response.json():
@@ -55,8 +60,14 @@ def list_lights():
                 continue
         elif not entity_id.startswith("light."):
             continue
-        name = entity.get("attributes", {}).get("friendly_name", entity_id)
-        lights_by_id[entity_id] = {"entity_id": entity_id, "name": name, "state": entity.get("state")}
+        item_config = config_by_id.get(entity_id, {})
+        name = item_config.get("name") or entity.get("attributes", {}).get("friendly_name", entity_id)
+        lights_by_id[entity_id] = {
+            "entity_id": entity_id,
+            "name": name,
+            "state": entity.get("state"),
+            "momentary": bool(item_config.get("momentary", False)),
+        }
 
     if allowed_ids is not None:
         return [lights_by_id[eid] for eid in allowed_ids if eid in lights_by_id]

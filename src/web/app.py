@@ -345,7 +345,7 @@ def shortcuts_delete(index):
 
 
 def _load_entities():
-    """Normaliza el formato viejo (lista simple de entity_id) al nuevo (con enabled)."""
+    """Normaliza el formato viejo al nuevo con visibilidad y tipo de control."""
     raw = config.get("home_assistant", "entities", default=[]) or []
     return [{"entity_id": e, "enabled": True} if isinstance(e, str) else e for e in raw]
 
@@ -366,8 +366,10 @@ def home_assistant():
         enabled = entity.get("enabled", True)
         toggle_label = "Desactivar" if enabled else "Activar"
         status = "Activa" if enabled else "Inactiva"
+        control = "Pulsador (solo encender)" if entity.get("momentary", False) else "Interruptor"
+        display_name = entity.get("name") or entity.get("entity_id", "?")
         rows += f"""<div class="card row">
-          <div><strong>{entity.get('entity_id', '?')}</strong><br><small>{status}</small></div>
+          <div><strong>{display_name}</strong><br><small>{entity.get('entity_id', '?')} · {status} · {control}</small></div>
           <div class="actions">
             <a href="/home-assistant/edit/{i}"><button type="button">Editar</button></a>
             <form class="inline" method="post" action="/home-assistant/toggle/{i}">
@@ -405,12 +407,25 @@ def home_assistant_edit(index):
         entity_id = request.form.get("entity_id", "").strip()
         if entity_id:
             entities[index]["entity_id"] = entity_id
+            name = request.form.get("name", "").strip()
+            if name:
+                entities[index]["name"] = name
+            else:
+                entities[index].pop("name", None)
+            entities[index]["momentary"] = request.form.get("momentary") == "on"
             config.set_value("home_assistant", "entities", value=entities)
         return redirect("/home-assistant")
 
     entity = entities[index]
     body = f"""<form method="post">
-      <input name="entity_id" value="{entity.get('entity_id', '')}" placeholder="entity_id" required>
+      <label>Entity ID</label>
+      <input name="entity_id" value="{entity.get('entity_id', '')}" placeholder="light.sala" required>
+      <label>Nombre mostrado en la tablet (opcional)</label>
+      <input name="name" value="{entity.get('name', '')}" placeholder="Ej. Abrir persiana">
+      <label style="display:flex; gap:8px; align-items:center; margin:12px 0;">
+        <input type="checkbox" name="momentary" style="width:auto; margin:0" {"checked" if entity.get("momentary", False) else ""}>
+        Pulsador: siempre envía encender; Home Assistant lo apaga mediante una automatización.
+      </label>
       <button type="submit">Guardar</button>
     </form>"""
     return _page("Editar luz", body)

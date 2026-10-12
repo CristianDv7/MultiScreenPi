@@ -1,4 +1,5 @@
 import threading
+import time
 
 import pygame
 
@@ -51,6 +52,14 @@ class HomeAssistantScreen(Screen):
 
     def _toggle(self, index):
         light = self.lights[index]
+        if light.get("momentary", False):
+            # Relés de persianas/portones: siempre envían un único pulso ON.
+            # Home Assistant es quien se encarga de apagarlos tras el retardo.
+            light["pressed_until"] = time.monotonic() + 0.55
+            threading.Thread(
+                target=self._toggle_worker, args=(light["entity_id"], True, index), daemon=True
+            ).start()
+            return
         turn_on = light["state"] != "on"
         light["state"] = "on" if turn_on else "off"
         threading.Thread(
@@ -105,10 +114,11 @@ class HomeAssistantScreen(Screen):
         else:
             for index, light in enumerate(self.lights):
                 rect = pygame.Rect(24, y, card_width, CARD_HEIGHT)
+                is_momentary = light.get("momentary", False)
                 is_on = light["state"] == "on"
 
                 pygame.draw.rect(surface, theme.SURFACE, rect, border_radius=20)
-                bar_color = theme.GREEN if is_on else theme.TEXT_MUTED
+                bar_color = theme.GOLD if is_momentary else (theme.GREEN if is_on else theme.TEXT_MUTED)
                 bar_rect = pygame.Rect(rect.left, rect.top, 6, rect.height)
                 pygame.draw.rect(
                     surface, bar_color, bar_rect, border_top_left_radius=20, border_bottom_left_radius=20
@@ -121,7 +131,10 @@ class HomeAssistantScreen(Screen):
                 surface.blit(name_surf, name_surf.get_rect(midleft=(rect.left + 28, rect.centery)))
                 surface.set_clip(clip)
 
-                self._draw_toggle(surface, rect, is_on)
+                if is_momentary:
+                    self._draw_momentary_action(surface, rect, light)
+                else:
+                    self._draw_toggle(surface, rect, is_on)
 
                 self._item_rects.append((rect, index))
                 y += CARD_HEIGHT + CARD_GAP
@@ -139,6 +152,16 @@ class HomeAssistantScreen(Screen):
         thumb_radius = TOGGLE_HEIGHT // 2 - THUMB_MARGIN
         thumb_x = track.right - thumb_radius - THUMB_MARGIN if is_on else track.left + thumb_radius + THUMB_MARGIN
         pygame.draw.circle(surface, theme.BG, (thumb_x, track.centery), thumb_radius)
+
+    def _draw_momentary_action(self, surface, card_rect, light):
+        pressed = time.monotonic() < light.get("pressed_until", 0)
+        button_rect = pygame.Rect(0, 0, 112, 42)
+        button_rect.midright = (card_rect.right - 24, card_rect.centery)
+        color = theme.GOLD if pressed else theme.PRIMARY
+        pygame.draw.rect(surface, color, button_rect, border_radius=14)
+        label = "Enviado" if pressed else "Pulsar"
+        label_surf = theme.FONT_SMALL.render(label, True, theme.BG)
+        surface.blit(label_surf, label_surf.get_rect(center=button_rect.center))
 
 
 def _wrap(text, font, max_width):

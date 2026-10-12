@@ -29,6 +29,13 @@ home_assistant:
   #     enabled: true
   #   - entity_id: light.cuarto
   #     enabled: false
+  # Para relés de pulso (persianas, portones), usa momentary: true. La app
+  # siempre enviará encender y una automatización de Home Assistant debe apagar
+  # el relé después del tiempo que definas.
+  #   - entity_id: light.abrir_persiana
+  #     name: "Abrir persiana"
+  #     enabled: true
+  #     momentary: true
 
 alexa:
   # Nombre exacto del servicio notify para tu Echo. Buscalo en HA:
